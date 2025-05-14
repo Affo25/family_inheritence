@@ -1,6 +1,6 @@
 import mongoose from "mongoose";
 import { NextResponse } from "next/server";
-import { connectionString } from "../../../Services/DbConnection";
+import { connectionString } from "../../lib/mongodb_connection";
 import { Students } from "@/Models/student";
 
 // MongoDB Connection Function (Prevents Multiple Connections)
