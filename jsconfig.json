@@ -1,7 +1,14 @@
 {
   "compilerOptions": {
+    // Set the baseUrl to the root of your project or the src directory
+    "baseUrl": "./", // This allows the use of non-relative paths
+
     "paths": {
-      "@/*": ["./src/*"]
+      // The '@/*' alias will map to the './src/*' directory
+      "@/*": ["./src/*"],
+
+      // The '@Services/*' alias will map to the './services/*' directory
+      "@Services/*": ["./services/*"]
     }
   }
 }

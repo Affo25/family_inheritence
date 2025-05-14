@@ -1,0 +1,87 @@
+.layout {
+  display: flex;
+  width: 100vw; /* Full width of the viewport */
+  height: 100vh; /* Full height of the viewport */
+}
+
+.sidebar {
+  width: 250px;
+  background: #333;
+  color: white;
+  height: 100vh;
+  padding: 20px;
+  flex-shrink: 0; /* Prevent shrinking */
+}
+
+.sidebar ul {
+  list-style: none;
+  padding: 0;
+}
+
+.sidebar ul li {
+  margin: 15px 0;
+}
+
+.sidebar ul li a {
+  color: white;
+  text-decoration: none;
+}
+
+.content {
+  width: calc(100% - 250px); /* Take full width minus sidebar */
+  padding: 20px;
+  background: #f4f4f4;
+  overflow: auto; /* Prevent overflow issues */
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 20px;
+}
+
+.add-btn {
+  background: #007bff;
+  color: white;
+  border-radius: 8px; /* Fixed */
+  padding: 10px 15px;
+  border: none;
+  cursor: pointer;
+  font-size: 16px;
+}
+
+.add-btn:hover {
+  background: #0056b3;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  background: white;
+}
+
+.data-table th,
+.data-table td {
+  padding: 12px;
+  border: 1px solid #ddd;
+  text-align: left;
+}
+
+.data-table th {
+  background: #007bff;
+  color: white;
+}
+
+/* Overlay (Background) */
+.overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: rgba(0, 0, 0, 0.5);
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
