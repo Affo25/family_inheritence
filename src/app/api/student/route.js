@@ -1,25 +1,14 @@
 import mongoose from "mongoose";
 import { NextResponse } from "next/server";
-import { connectionString } from "../../lib/mongodb_connection";
-import { Students } from "@/Models/student";
+import  connectToMongo  from '../../lib/mongodb_connection';
+import { Students } from "../../../Models/student";
 
-// MongoDB Connection Function (Prevents Multiple Connections)
-const connectDB = async () => {
-  if (mongoose.connection.readyState !== 1) {
-    try {
-      await mongoose.connect(connectionString);
-      console.log("✅ MongoDB Connected!");
-    } catch (error) {
-      console.error("❌ MongoDB Connection Error:", error);
-      throw new Error("Database connection failed!");
-    }
-  }
-};
+
 
 // GET API to Fetch Students
 export async function GET() {
   try {
-    await connectDB(); // Ensure database connection
+    await connectToMongo(); // Ensure database connection
 
     const token = cookies().get("token")?.value;
 
@@ -48,7 +37,7 @@ export async function GET() {
 
 export async function POST(request) { // <-- Use "request" instead of "req"
   try {
-    await connectDB(); // Ensure database connection
+    await connectToMongo(); // Ensure database connection
 
     const body = await request.json(); // <-- Corrected JSON parsing
 
