@@ -9,6 +9,10 @@
 
       // The '@Services/*' alias will map to the './services/*' directory
       "@Services/*": ["./services/*"]
-    }
+    },
+   "jsx": "preserve",  // For Next.js/React projects
+   "target": "ES2017",                // or at least "ES2015"
+    "lib": ["DOM", "DOM.Iterable", "ESNext"],
+    "downlevelIteration": true,
   }
 }

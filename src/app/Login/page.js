@@ -14,14 +14,14 @@ function SignInPage() {
   const router = useRouter();
   const setRole = useUserRoleStore((state) => state.setRole);
   const role = useUserRoleStore((state) => state.role);
-  const { formData = { email: '', password: '', user_type:"" }, formErrors = {}, loading = false, setFormData, login } = useLoginStore();
+  const { formData = { email: '', password: '' }, formErrors = {}, loading = false, setFormData, login } = useLoginStore();
  const [showPassword, setShowPassword] = useState(false);
 
   const togglePassword = () => setShowPassword(!showPassword);
   useEffect(() => {
     // Initialize form data if needed
-    if (!formData.email && !formData.password && !formData.user_type) {
-      setFormData({ email: '', password: '',user_type:'' });
+    if (!formData.email && !formData.password ) {
+      setFormData({ email: '', password: '' });
     }
   }, []);
 
@@ -34,15 +34,14 @@ function SignInPage() {
     e.preventDefault();
     try {
       // Basic validation
-      if (!formData.email || !formData.password || !formData.user_type) {
-        toast.error('Please enter both email and password or select user role');
+      if (!formData.email || !formData.password) {
+        toast.error('Please enter both email and password');
         return;
       }
 
       const userData = {
         email: formData.email,
         password: formData.password,
-        user_type: formData.user_type
       };
       console.log(userData);
 
@@ -53,9 +52,9 @@ function SignInPage() {
         console.log("Login successful, redirecting...",result);
         // Use window.location for a hard navigation
         //window.location.href = '/Dashboard/layout';
-        const userRole = result.user?.userRole;
-        setRole(userRole);
-        console.log(result.userRole);
+        // const userRole = result.user?.userRole;
+        // setRole(userRole);
+        // console.log(result.userRole);
         router.push("/Dashboard");
 
       }
@@ -71,15 +70,16 @@ function SignInPage() {
   };
 
   return (
-    <div className="nk-app-root bg-dark nk-blocks d-flex flex-column min-vh-100">
+    <div className="nk-app-root bg-light nk-blocks d-flex flex-column min-vh-100">
       <div
         className="container bg-dark-grey bg-gradient py-5 d-flex align-items-center justify-content-center flex-grow-1"
         style={{
-          maxWidth: '600px',
-          maxHeight: '800px',
+           backgroundColor: "#1C2B46",
+          maxWidth: '550px',
+          maxHeight: '600px',
           borderRadius: '10px',
           boxShadow: 'rgba(236, 191, 43, 0.2) 0px 2px 8px 0px',
-          marginTop: '2rem',
+          marginTop: '5rem',
           marginBottom: '2rem',
         }}
       >
@@ -155,7 +155,7 @@ function SignInPage() {
                   )}
                 </div>
               </div>
-
+{/* 
               <div className="form-group">
                 <div className="form-label-group">
                   <label style={{color:"#fff"}} className="form-label" htmlFor="user_type">User Type</label>
@@ -176,8 +176,11 @@ function SignInPage() {
                     <div className="invalid-feedback">{formErrors.user_type}</div>
                   )}
                 </div>
-              </div>
+              </div> */}
               <div className="form-group">
+                <div className="form-label-group">
+                  <label  style={{color:"#fff"}} className="form-label" htmlFor="password"></label>
+                </div>
                 <button
                   type="submit"
                   className="btn btn-lg btn-primary btn-block"
@@ -186,11 +189,11 @@ function SignInPage() {
                   {loading ? 'Signing in...' : 'Sign in'}
                 </button>
               </div>
-              <div className="nk-block-head text-center">
+              {/* <div className="nk-block-head text-center">
               <div className="nk-block-head-content">
-                <h5 style={{ color: '#fff' }} className="nk-block-title">Register Yourself to login? <Link href="/SignUp"><span>Sign up</span></Link></h5>
+                <h5 style={{ color: '#fff' }} className="nk-block-title"><span style={{color:"#fff",fontWeight:'normal',cursor:'pointer',fontSize:'smaller'}}>Register yourself to login?</span> <Link href="/SignUp"><span>Register</span></Link></h5>
               </div>
-            </div>
+            </div> */}
             </form>
           </div>
         </div>

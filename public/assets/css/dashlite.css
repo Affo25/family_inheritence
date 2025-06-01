@@ -5060,7 +5060,7 @@ input[type="radio"]:checked ~ label { cursor: default; }
 
 .nav-tabs-s2 { border-bottom: none; justify-content: center; }
 
-.nav-tabs + .tab-content { margin-top: 1.25rem; }
+.nav-tabs + .tab-content { margin-top: 0.25rem; }
 
 .nav-tabs .nav-item { padding-right: 1.25rem; }
 

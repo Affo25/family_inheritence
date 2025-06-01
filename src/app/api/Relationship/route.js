@@ -1,4 +1,4 @@
-import  Relationship  from '@/Models/relationship_model';
+import  Relationship  from '../../../Models/relationship_model';
 import { NextResponse } from 'next/server';
 import  connectToMongo  from '../../lib/mongodb_connection';
 import { v4 as uuidv4 } from 'uuid';
@@ -51,9 +51,9 @@ const newFieldValue = body.newField || 'default value'; // Set a default value i
         person1_id: body.person1_id,
         person2_id: body.person2_id,
         relationship_type: body.relationship_type,
-        status: body.status,
+        date: body.date,
         newField: newFieldValue,
-        created_by: body.created_by,
+        created_by: "Me",
         created_on: new Date(),
         updated_on: new Date()
     };
@@ -77,7 +77,7 @@ const newFieldValue = body.newField || 'default value'; // Set a default value i
         success: true,
         message: "Record created successfully",
         pid: profile._id,
-        pid: profile.pid
+      
       },
       { status: 201 }
     );
@@ -256,87 +256,86 @@ export async function DELETE(request) {
 
 // PUT API to Update a Profile
 
-  export async function PUT(request) {
-    try {
-      await connectToMongo(); // Ensure MongoDB is connected
-  
-      const body = await request.json();
-      console.log("Received update request with body:", body);
-      console.log("Received rry list request with body:", body.devicesList);
-  
-      const {
-        _id,
-        person1_id,
-        person2_id,
-        rid,
-        relationship_type,
-        status,
-      } = body;
-  
-  
-      // // ✅ Validate required fields
-      // if (!person1_id ||!person2_id ||!relationship_type ||!status) {
-      //   return NextResponse.json(
-      //     { success: false, message: 'All required fields must be provided' },
-      //     { status: 400 }
-      //   );
-      // }
-  
-      // // ✅ Check for existing customer (excluding the current one)
-      // const existingCustomer = await Relationship.findOne({
-      //   rid: rid,
-      //   _id: { $ne: _id }
-      // });
-  
-      // if (existingCustomer) {
-      //   return NextResponse.json(
-      //     { success: false, message: "Another record with this id already exists" },
-      //     { status: 409 }
-      //   );
-      // }
-  
-      // ✅ Build updated data
-      const updatedCustomerData = {
-        _id,
-        person1_id,
-        person2_id,
-        rid,
-        relationship_type,
-        status,
-        updatedAt: new Date()
-      };
-  
-      console.log("Updating Record with ID:", _id);
-      console.log("Update data:", updatedCustomerData);
-  
-      // ✅ Update the customer
-      const updatedCustomer = await Relationship.findByIdAndUpdate(
-        _id,
-        updatedCustomerData,
-        { new: true }
-      );
-  
-      if (!updatedCustomer) {
-        return NextResponse.json(
-          { success: false, message: 'Record not found' },
-          { status: 404 }
-        );
-      }
-  
+export async function PUT(request) {
+  try {
+    await connectToMongo(); // Ensure MongoDB is connected
+
+    const body = await request.json();
+    console.log("🟡 Received update request with body:", body);
+
+    const {
+      person1_id,
+      person2_id,
+      rid, // used as the identifier now
+      relationship_type,
+      date,
+    } = body;
+
+    // ✅ Validate required fields
+    if (!person1_id || !person2_id || !relationship_type || !rid) {
       return NextResponse.json(
-        { success: true, message: 'Record updated successfully', customer: updatedCustomer },
-        { status: 200 }
-      );
-    } catch (error) {
-      console.error("❌ Detailed Error:", {
-        message: error.message,
-        stack: error.stack,
-        fullError: error
-      });
-  
-      return NextResponse.json(
-        { success: false, message: 'Internal Server Error' },
-        { status: 500 }
+        { success: false, message: "All required fields must be provided" },
+        { status: 400 }
       );
     }
+
+    // ✅ Prevent same person relationships
+    if (person1_id === person2_id) {
+      return NextResponse.json(
+        { success: false, message: "Cannot relate the same person to themselves" },
+        { status: 400 }
+      );
+    }
+
+    // ✅ Check for duplicate `rid` (excluding current record by rid)
+    const existing = await Relationship.findOne({
+      rid,
+      // Optionally check if a record exists with same data but different _id (if _id is passed in the future)
+    });
+
+    if (!existing) {
+      return NextResponse.json(
+        { success: false, message: "Record with this rid not found" },
+        { status: 404 }
+      );
+    }
+
+    // ✅ Build update object
+    const updatedFields = {
+      person1_id,
+      person2_id,
+      relationship_type,
+      date,
+      updatedAt: new Date(),
+    };
+
+    console.log("🛠️ Updating record with rid:", rid);
+    console.log("🛠️ Update payload:", updatedFields);
+
+    const updatedRecord = await Relationship.findOneAndUpdate(
+      { rid },
+      updatedFields,
+      { new: true } // return updated document
+    );
+
+    return NextResponse.json(
+      {
+        success: true,
+        message: "Relationship updated successfully",
+        record: updatedRecord,
+      },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error("❌ Error updating relationship:", {
+      message: error.message,
+      stack: error.stack,
+    });
+
+    return NextResponse.json(
+      { success: false, message: "Internal Server Error" },
+      { status: 500 }
+    );
+  }
 }
+

@@ -252,7 +252,7 @@ export default function SignupForm() {
               </div>
               <div className="nk-block-head text-center">
               <div className="nk-block-head-content">
-                <h5 style={{ color: '#fff' }} className="nk-block-title">Already have an account? <Link href="/Login"><span>Log In</span></Link></h5>
+                <h5 style={{ color: '#fff' }} className="nk-block-title"><span style={{color:"#fff",fontWeight:'normal',cursor:'pointer',fontSize:'smaller'}}>Already have an account?</span> <Link href="/Login"><span>Login</span></Link></h5>
               </div>
             </div>
             </form>

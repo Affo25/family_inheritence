@@ -24,14 +24,8 @@ const useDeathStore = create((set) => ({
     const errors = {};
     const { formData } = useDeathStore.getState();
 
-     // Validate death_date (only if it's a string)
-  if (formData.death_date && typeof formData.death_date === 'string') {
-    if (formData.death_date.trim() === '') {
-      errors.death_date = 'Death date is required';
-    }
-  } else if (!formData.death_date) {
-    errors.death_date = 'Death date is required';
-  }
+  if (!formData.death_date) errors.death_date = 'Death date is required';
+  
     if (!formData.death_place.trim()) errors.death_place = 'death_place is required';
     if (!formData.death_reason.trim()) errors.death_reason = 'death_reason is required';
 

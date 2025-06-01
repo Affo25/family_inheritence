@@ -1,6 +1,5 @@
-const mongoose = require("mongoose");
+const {mongoose,Document} = require("mongoose");
 const { v4: uuidv4 } = require('uuid');
-
 
 // Define enums for dropdown options
 const MARITAL_STATUS = ['Single', 'Married', 'Divorced', 'Widowed', 'Separated'];
@@ -13,6 +12,7 @@ const ProfileModelSchema = new mongoose.Schema({
         default: uuidv4
 
     },
+    image: String,
     first_name: {
         type: String,
         required: true,
@@ -22,6 +22,18 @@ const ProfileModelSchema = new mongoose.Schema({
         type: String,
         required: true,
         trim: true
+    },
+     gender: {
+        type: String,
+        required: true,
+        default: "",
+        enum: ["Male", "Female"]
+    },
+     status: {
+        type: String,
+        required: true,
+        default: "Pending",
+        enum: ["Pending", "Approved"]
     },
     email: {
         type: String,
@@ -82,13 +94,15 @@ const ProfileModelSchema = new mongoose.Schema({
         type: String,
          default: "",
     },
-    mother_id: {
+     mother_id: {
         type: String,
-        default: "",
-    },
-    father_id: {
+        unique: true,
+        default: uuidv4
+  },
+  father_id: {
         type: String,
-        default: "",
+        unique: true,
+        default: uuidv4
     },
     created_on: {
         type: Date,
@@ -107,9 +121,9 @@ const ProfileModelSchema = new mongoose.Schema({
         type: String,
         ref: 'User'
     }
-}, {
+},
     
-});
+);
 
 // Export the enums along with the model
 export default mongoose.models.Profile || mongoose.model('Profile', ProfileModelSchema);

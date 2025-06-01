@@ -20,19 +20,16 @@ const useRelationshipStore = create((set) => ({
       formErrors: { ...state.formErrors, [Object.keys(data)[0]]: '' },
     })),
 
-  validateForm: () => {
-    const errors = {};
-    const { formData } = useRelationshipStore.getState();
+  validateForm: (data) => {
+  const errors = {};
 
-    if (!formData.person1_id.trim()) errors.person1_id = 'person1_id is required';
-    if (!formData.person2_id.trim()) errors.person2_id = 'person2_id is required';
-    if (!formData.relationship_type.trim()) errors.relationship_type = 'relationship type is required';
-    if (!formData.status.trim()) errors.status = 'status is required';
+  if (!data.person1_id?.trim()) errors.person1_id = 'person1_id is required';
+  if (!data.person2_id?.trim()) errors.person2_id = 'person2_id is required';
+  if (!data.relationship_type?.trim()) errors.relationship_type = 'relationship type is required';
 
-
-    set({ formErrors: errors });
-    return Object.keys(errors).length === 0;
-  },
+  set({ formErrors: errors });
+  return Object.keys(errors).length === 0;
+},
 
   addCustomer: async (personData = null) => {
     try {
@@ -56,7 +53,7 @@ const useRelationshipStore = create((set) => ({
                 person1_id: '',
                 person2_id: '',
                 relationship_type: '',
-                status: '',
+                date: '',
             },
           });
         }
@@ -76,49 +73,54 @@ const useRelationshipStore = create((set) => ({
     }
   },
 
-  updateCustomer: async (personId, updatedData) => {
-    try {
-      set({ loading: true, error: null });
+ updateCustomer: async (rid, updatedData) => {
+  try {
+    set({ loading: true, error: null });
 
-      const dataToSend = {
-        _id: personId,
-        ...updatedData,
-      };
-      
-      // Log the data being sent to the API
-      console.log("Sending update data to API:", dataToSend);
-      
-      const response = await axios.put('/api/Relationship', dataToSend);
+    const dataToSend = {
+      rid, // use rid as identifier
+      ...updatedData,
+    };
 
-      if (response.data?.success) {
-        toast.success('Record updated successfully!');
-        set((state) => ({
-          relationship: state.relationship.map((person) =>
-            person._id === personId ? response.data.person : person
-          ),
-          loading: false,
-          formData: {
-            person1_id: '',
-            person2_id: '',
-            relationship_type: '',
-            status: '',
-          },
-        }));
-        return true;
-      } else {
-        const errorMessage = response.data?.message || 'Failed to update record';
-        toast.error(errorMessage);
-        set({ loading: false, error: errorMessage });
-        return false;
-      }
-    } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Failed to update record';
-      toast.error(errorMessage);
-      console.error('Update error:', error);
-      set({ loading: false, error: errorMessage });
+    console.log("📤 Sending update data to API:", dataToSend);
+
+    const response = await axios.put('/api/Relationship', dataToSend);
+    const { success, message, record } = response.data;
+
+    if (success) {
+      toast.success('✅ Record updated successfully!');
+
+      set((state) => ({
+        relationship: state.relationship.map((item) =>
+          item.rid === rid ? record : item
+        ),
+        relationshipFormData: {
+          person1_id: '',
+          person2_id: '',
+          relationship_type: '',
+          date: '',
+        },
+        isEditMode: false,
+        marriageMode: false,
+        loading: false,
+        error: null,
+      }));
+
+      return true;
+    } else {
+      const errorMsg = message || '❌ Failed to update record';
+      toast.error(errorMsg);
+      set({ loading: false, error: errorMsg });
       return false;
     }
-  },
+  } catch (error) {
+    const errorMsg = error.response?.data?.message || '❌ Failed to update record';
+    toast.error(errorMsg);
+    console.error('🔴 Update error:', error);
+    set({ loading: false, error: errorMsg });
+    return false;
+  }
+},
 
   deleteCustomer: async (personId) => {
     try {
@@ -154,7 +156,7 @@ const useRelationshipStore = create((set) => ({
       const response = await axios.get('/api/Relationship');
       if (response.data?.relationship && Array.isArray(response.data.relationship)) {
         set({ relationship: response.data.relationship, loading: false });
-        toast.success('reltionships fetched successfully!');
+        //toast.success('reltionships fetched successfully!');
         console.log('Fetched reltionships:', response.data.relationship);
       } else {
         set({ relationship: [], loading: false });

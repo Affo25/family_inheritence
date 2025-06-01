@@ -90,7 +90,7 @@ const signupstore = create((set, get) => ({
           isAuthenticated: true,
         });
         
-        return { success: true, user };
+        return { success: true, user: res.data.userId };
       } else {
         throw new Error(res.data?.message || 'User Created failed');
       }

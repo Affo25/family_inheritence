@@ -1,114 +1,70 @@
 import  Profile  from '../../../Models/person_info';
-import { NextResponse } from 'next/server';
+import { NextRequest, NextResponse } from 'next/server';
 import  connectToMongo  from '../../lib/mongodb_connection';
 import { v4 as uuidv4 } from 'uuid';
-
+import path from 'path';
+import fs from 'fs/promises';
 
 // Define enums for dropdown options
 const MARITAL_STATUS = ['Single', 'Married', 'Divorced', 'Widowed', 'Separated'];
 const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'Unknown'];
 
-// POST API to Create a Profile
-export async function POST(request) {
+
+export async function GET(request) {
   try {
-    // Connect to MongoDB
     await connectToMongo();
 
-    const body = await request.json();
-    console.log("Received create request with body:", body);
+    const { searchParams } = new URL(request.url);
+    const page = parseInt(searchParams.get('page') || '1');
+    const limit = parseInt(searchParams.get('limit') || '10');
+    const status = searchParams.get('status');
+    const search = searchParams.get('search');
 
-    // Validate required fields
-    if (!body.first_name || !body.last_name) {
-      return NextResponse.json(
-        { success: false, message: "First name and last name are required" },
-        { status: 400 }
-      );
+    const skip = (page - 1) * limit;
+    
+
+    const query = {};
+    if (status) query.status = status;
+    if (search) {
+      query.$or = [
+        { first_name: { $regex: search, $options: 'i' } },
+        { last_name: { $regex: search, $options: 'i' } },
+        { email: { $regex: search, $options: 'i' } },
+      ];
     }
 
-    // // Check for existing profile by CNIC or email
-    // const existingProfileConditions = [];
-    // if (body.cnic) existingProfileConditions.push({ cnic: body.cnic });
-    // if (body.email) existingProfileConditions.push({ email: body.email });
+    const [persons, total] = await Promise.all([
+      Profile.find(query).skip(skip).limit(limit).lean(),
+      Profile.countDocuments(query),
+    ]);
 
-    // if (existingProfileConditions.length > 0) {
-    //   const existingProfile = await Profile.findOne({
-    //     $or: existingProfileConditions
-    //   });
-
-    //   if (existingProfile) {
-    //     const conflictField = existingProfile.cnic === body.cnic ? 'CNIC' : 'email';
-    //     return NextResponse.json(
-    //       { success: false, message: `Profile with this ${conflictField} already exists` },
-    //       { status: 409 }
-    //     );
-    //   }
-    // }
-
-    // // Validate dropdown fields
-    // if (body.blood_group && !BLOOD_GROUPS.includes(body.blood_group)) {
-    //   return NextResponse.json(
-    //     { success: false, message: "Invalid blood group" },
-    //     { status: 400 }
-    //   );
-    // }
-
-    // if (body.marital_status && !MARITAL_STATUS.includes(body.marital_status)) {
-    //   return NextResponse.json(
-    //     { success: false, message: "Invalid marital status" },
-    //     { status: 400 }
-    //   );
-    // }
-
-    // Generate UUIDs if not provided
-    const gr_father_id = body.gr_father_id || uuidv4();
-    const gr_mother_id = body.gr_mother_id || uuidv4();
-    const father_id = body.father_id || uuidv4();
-    const mother_id = body.mother_id || uuidv4();
-
-    // Create new profile
-    const profile = new Profile({
-      first_name: body.first_name,
-      last_name: body.last_name,
-      email: body.email,
-      contact: body.contact,
-      birth_date: body.birth_date ? new Date(body.birth_date) : null,
-      birth_place: body.birth_place,
-      blood_group: body.blood_group || 'Unknown',
-      marital_status: body.marital_status || 'Single',
-      occupation: body.occupation,
-      alive: body.alive !== false, // Default to true if not specified
-      cnic: body.cnic,
-      gr_father_id,
-      gr_mother_id,
-      mother_id,
-      father_id,
-      created_by: body.created_by
-    });
-
-    // Save profile to the database
-    await profile.save();
-
-    return NextResponse.json(
-      {
-        success: true,
-        message: "Profile created successfully",
-        profileId: profile._id,
-        pid: profile.pid
+    return NextResponse.json({
+      success: true,
+      message: 'Persons retrieved successfully',
+      data: {
+        persons,
+        pagination: {
+          total,
+          totalPages: Math.ceil(total / limit),
+          currentPage: page,
+          limit,
+          hasNextPage: page * limit < total,
+          hasPreviousPage: page > 1,
+        },
       },
-      { status: 201 }
-    );
+    });
   } catch (error) {
-    console.error("❌ Profile Creation Error:", {
+    console.error('❌ Detailed Error:', {
       message: error.message,
       stack: error.stack,
-      fullError: error
+      fullError: error,
     });
 
     return NextResponse.json(
       {
         success: false,
-        message: "Internal Server Error",
-        error:  error.message
+        message: 'Internal Server Error',
+        error: process.env.NODE_ENV === 'development' ? error.message : undefined,
       },
       { status: 500 }
     );
@@ -116,37 +72,7 @@ export async function POST(request) {
 }
 
 
-export async function GET() {
-  try {
-    await connectToMongo();
-
-    // Retrieve all customers with populated devices
-    const persons = await Profile.find({});
-    console.log("📌 Persons Data:", persons);
-
-    return NextResponse.json(
-      { 
-        success: true, 
-        message: "Persons retrieved successfully",
-        persons: persons
-      },
-      { status: 200 }
-    );
-  } catch (error) {
-    console.error("❌ Detailed Error:", {
-      message: error.message,
-      stack: error.stack,
-      fullError: error
-    });
-    console.error("Error retrieving Persons:", error);
-    return NextResponse.json(
-      { success: false, message: "Internal Server Error" },
-      { status: 500 }
-    );
-  }
-}
-
-// GET API to Retrieve Profiles
+//GET API to Retrieve Profiles
 // export async function GET(request) {
 //   try {
 //     await connectToMongo();
@@ -289,95 +215,302 @@ export async function DELETE(request) {
   }
 }
 
-// PUT API to Update a Profile
+async function saveFile(file) {
+  // Check if file is valid before trying to access arrayBuffer
+  if (!file || typeof file.arrayBuffer !== 'function') {
+    console.error('Invalid file object:', file);
+    throw new Error('Invalid file object');
+  }
+  
+  try {
+    const buffer = Buffer.from(await file.arrayBuffer());
+    const uploadDir = path.join(process.cwd(), 'public/uploads');
+    await fs.mkdir(uploadDir, { recursive: true });
+    const fileName = `${Date.now()}-${file.name.replace(/\s+/g, '-')}`;
+    const filePath = path.join(uploadDir, fileName);
+    await fs.writeFile(filePath, buffer);
+    return `/uploads/${fileName}`;
+  } catch (error) {
+    console.error('Error saving file:', error);
+    throw error;
+  }
+}
+
+export async function POST(request) {
+  try {
+    await connectToMongo();
+    const form = await request.formData();
+
+    // Log all form data for debugging
+    console.log("Form data received in POST:");
+    for (const [key, value] of form.entries()) {
+      console.log(`${key}: ${value}`);
+    }
+
+    const file = form.get('image');
+    const first_name = form.get('first_name');
+    const last_name = form.get('last_name');
+    const email = form.get('email');
+    const contact = form.get('contact');
+    const birth_date = form.get('birth_date');
+    const birth_place = form.get('birth_place');
+    const blood_group = form.get('blood_group') || 'Unknown';
+    const marital_status = form.get('marital_status') || 'Single';
+    const occupation = form.get('occupation');
+    const alive = form.get('alive') !== 'false';
+    const cnic = form.get('cnic');
+    const gender = form.get('gender');
+
+    // Handle UUIDs as plain strings
+    const father_id = form.get('father_id') || '';
+    const mother_id = form.get('mother_id') || '';
+
+    // If grandparents still use ObjectId
+    const gr_father_id = toObjectIdOrNull(form.get('gr_father_id'));
+    const gr_mother_id = toObjectIdOrNull(form.get('gr_mother_id'));
+
+    console.log("Parent UUIDs:");
+    console.log("father_id (UUID):", father_id);
+    console.log("mother_id (UUID):", mother_id);
+
+    const created_by = form.get('created_by');
+
+    if (!email || !first_name || !last_name) {
+      return NextResponse.json({ success: false, message: 'Required fields missing' }, { status: 400 });
+    }
+
+    // Save image and get URL path
+    const imageUrl = await saveFile(file);
+
+    const profileData = {
+      first_name,
+      last_name,
+      image: imageUrl,
+      email,
+      gender,
+      contact,
+      birth_date: birth_date ? new Date(birth_date) : null,
+      birth_place,
+      blood_group,
+      marital_status,
+      occupation,
+      alive,
+      cnic,
+      father_id,
+      mother_id,
+      gr_father_id,
+      gr_mother_id,
+      created_by
+    };
+
+    console.log("Final profile data to save:", profileData);
+
+    const profile = new Profile(profileData);
+    await profile.save();
+
+    return NextResponse.json({
+      success: true,
+      message: 'Profile created successfully',
+      profileId: profile._id,
+      data: profile
+    }, { status: 201 });
+
+  } catch (error) {
+    console.error('❌ Profile Creation Error:', error);
+    return NextResponse.json({ success: false, message: 'Server error', error: error.message }, { status: 500 });
+  }
+}
+
+
+
+
+
 export async function PUT(request) {
   try {
     await connectToMongo();
 
-    const body = await request.json();
-    console.log("Received update request with body:", body);
+    const contentType = request.headers.get("content-type") || "";
+    let body;
+    let imageUrl;
+    let formEntries = new Map();
 
-    // Validate required fields
-    if (!body._id || !body.first_name || !body.last_name) {
-      return NextResponse.json(
-        { success: false, message: "ID, first name and last name are required" },
-        { status: 400 }
-      );
-    }
-
-    // Validate dropdown fields
-    if (body.blood_group && !BLOOD_GROUPS.includes(body.blood_group)) {
-      return NextResponse.json(
-        { success: false, message: "Invalid blood group" },
-        { status: 400 }
-      );
-    }
-
-    if (body.marital_status && !MARITAL_STATUS.includes(body.marital_status)) {
-      return NextResponse.json(
-        { success: false, message: "Invalid marital status" },
-        { status: 400 }
-      );
-    }
-
-    // Check for existing profile with same CNIC or email (excluding current)
-    const existingConditions = [];
-    if (body.cnic) existingConditions.push({ cnic: body.cnic, _id: { $ne: body._id } });
-    if (body.email) existingConditions.push({ email: body.email, _id: { $ne: body._id } });
-    
-    if (existingConditions.length > 0) {
-      const existingProfile = await Profile.findOne({
-        $or: existingConditions
-      });
-      
-      if (existingProfile) {
-        const conflictField = existingProfile.cnic === body.cnic ? 'CNIC' : 'email';
-        return NextResponse.json(
-          { success: false, message: `Another profile with this ${conflictField} already exists` },
-          { status: 409 }
-        );
-      }
-    }
-
-    // Build update data
-    const updateData = {
-      first_name: body.first_name,
-      last_name: body.last_name,
-      email: body.email,
-      contact: body.contact,
-      birth_date: body.birth_date ? new Date(body.birth_date) : null,
-      birth_place: body.birth_place,
-      blood_group: body.blood_group,
-      marital_status: body.marital_status,
-      occupation: body.occupation,
-      alive: body.alive,
-      cnic: body.cnic,
-      gr_father_id: body.gr_father_id,
-      gr_mother_id: body.gr_mother_id,
-      mother_id: body.mother_id,
-      father_id: body.father_id,
-      updated_by: body.updated_by
+    // Helper functions
+    const formatUuid = (id) => {
+      if (!id || id === "null" || id === "") return "";
+      return id.toString().trim();
     };
 
-    // Update the profile
-    const updatedProfile = await Profile.findByIdAndUpdate(
-      body._id,
-      updateData,
-      { new: true }
-    ).populate('gr_father_id gr_mother_id mother_id father_id', 'first_name last_name pid');
+    const toObjectIdOrNull = (id) => {
+      if (!id || id === "null" || id === "") return null;
+      if (/^[0-9a-fA-F]{24}$/.test(id)) return new mongoose.Types.ObjectId(id);
+      return null;
+    };
 
-    if (!updatedProfile) {
+    if (contentType.includes("multipart/form-data")) {
+      const form = await request.formData();
+
+      for (const [key, value] of form.entries()) {
+        formEntries.set(key, value);
+      }
+
+      const file = form.get("image");
+      if (file && typeof file === "object" && file.size > 0) {
+        imageUrl = await saveFile(file);
+      } else {
+        imageUrl = form.get("image") || null;
+      }
+
+      body = {
+        _id: form.get("_id"),
+        first_name: form.get("first_name"),
+        last_name: form.get("last_name"),
+        email: form.get("email"),
+        contact: form.get("contact"),
+        birth_date: form.get("birth_date"),
+        birth_place: form.get("birth_place"),
+        blood_group: form.get("blood_group") || "Unknown",
+        marital_status: form.get("marital_status") || "Single",
+        occupation: form.get("occupation"),
+        alive: form.get("alive") !== "false",
+        cnic: form.get("cnic"),
+        gender: form.get("gender"),
+        gr_father_id: toObjectIdOrNull(form.get("gr_father_id")),
+        gr_mother_id: toObjectIdOrNull(form.get("gr_mother_id")),
+        father_id: formatUuid(form.get("father_id")),
+        mother_id: formatUuid(form.get("mother_id")),
+        updated_by: form.get("updated_by"),
+      };
+    } else {
+      body = await request.json();
+      imageUrl = body.image || null;
+
+      for (const [key, value] of Object.entries(body)) {
+        formEntries.set(key, value);
+      }
+
+      body = {
+        ...body,
+        gr_father_id: toObjectIdOrNull(body.gr_father_id),
+        gr_mother_id: toObjectIdOrNull(body.gr_mother_id),
+        father_id: formatUuid(body.father_id),
+        mother_id: formatUuid(body.mother_id),
+      };
+    }
+
+    const {
+      _id,
+      first_name,
+      last_name,
+      email,
+      contact,
+      birth_date,
+      birth_place,
+      blood_group,
+      marital_status,
+      occupation,
+      alive,
+      cnic,
+      image,
+      gr_father_id,
+      gr_mother_id,
+      father_id,
+      mother_id,
+      updated_by,
+    } = body;
+
+    // Validate required fields
+    if (!_id || !first_name || !last_name) {
       return NextResponse.json(
-        { success: false, message: "Profile not found" },
+        {
+          success: false,
+          message: "ID, First Name, and Last Name are required.",
+        },
+        { status: 400 }
+      );
+    }
+
+    // Validate MongoDB ID format
+    if (!/^[0-9a-fA-F]{24}$/.test(_id)) {
+      return NextResponse.json(
+        { success: false, message: "Invalid ID format. Must be a MongoDB ObjectId." },
+        { status: 400 }
+      );
+    }
+
+    // Validate UUID format for father_id and mother_id
+    const uuidRegex =
+      /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+
+    if (father_id && !uuidRegex.test(father_id)) {
+      return NextResponse.json(
+        { success: false, message: "Invalid father_id UUID format." },
+        { status: 400 }
+      );
+    }
+
+    if (mother_id && !uuidRegex.test(mother_id)) {
+      return NextResponse.json(
+        { success: false, message: "Invalid mother_id UUID format." },
+        { status: 400 }
+      );
+    }
+
+    const existingProfile = await Profile.findById(_id).lean();
+    if (!existingProfile) {
+      return NextResponse.json(
+        { success: false, message: "Profile not found." },
         { status: 404 }
       );
     }
 
+    const updatedData = {
+      first_name,
+      last_name,
+      email,
+      contact,
+      birth_date: birth_date ? new Date(birth_date) : null,
+      birth_place,
+      blood_group,
+      image,
+      marital_status,
+      occupation,
+      alive,
+      cnic,
+      father_id,
+      mother_id,
+      gr_father_id,
+      gr_mother_id,
+      updated_by,
+    };
+
+    if (imageUrl) {
+      updatedData.image = imageUrl;
+    }
+
+    // Check and add new fields if any
+    const existingFields = Object.keys(existingProfile);
+    const newFields = {};
+    for (const [key, value] of formEntries.entries()) {
+      if (key === "_id" || key in updatedData) continue;
+      if (!existingFields.includes(key) && value !== undefined && value !== null) {
+        newFields[key] = value;
+      }
+    }
+
+    const finalUpdatedData = {
+      ...updatedData,
+      ...newFields,
+    };
+
+    const updatedProfile = await Profile.findByIdAndUpdate(_id, finalUpdatedData, {
+      new: true,
+    });
+
     return NextResponse.json(
-      { 
-        success: true, 
-        message: "Profile updated successfully", 
-        profile: updatedProfile 
+      {
+        success: true,
+        message: "Profile updated successfully.",
+        data: updatedProfile,
       },
       { status: 200 }
     );
@@ -385,12 +518,19 @@ export async function PUT(request) {
     console.error("❌ Profile Update Error:", {
       message: error.message,
       stack: error.stack,
-      fullError: error
     });
-    
+
     return NextResponse.json(
-      { success: false, message: "Internal Server Error" },
+      {
+        success: false,
+        message: "Internal Server Error",
+        error: error.message,
+      },
       { status: 500 }
     );
   }
 }
+
+
+
+

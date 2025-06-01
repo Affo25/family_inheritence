@@ -107,7 +107,7 @@ function MarriageDataTable({
               <ReactPaginate
                 previousLabel={"Previous"}
                 nextLabel={"Next"}
-                pageCount={Math.ceil(filteredPersons.length / personsPerPage)}
+                pageCount={Math.ceil(persons.length / personsPerPage)}
                 onPageChange={handlePageClick}
                 containerClassName={"pagination justify-content-end"}
                 pageClassName={"page-item"}

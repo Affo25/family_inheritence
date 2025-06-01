@@ -24,25 +24,7 @@ export async function POST(request) {
       );
     }
 
-    // // Check for existing profile by CNIC or email
-    // const existingProfileConditions = [];
-    // if (body.cnic) existingProfileConditions.push({ cnic: body.cnic });
-    // if (body.email) existingProfileConditions.push({ email: body.email });
-
-    // if (existingProfileConditions.length > 0) {
-    //   const existingProfile = await Profile.findOne({
-    //     $or: existingProfileConditions
-    //   });
-
-    //   if (existingProfile) {
-    //     const conflictField = existingProfile.cnic === body.cnic ? 'CNIC' : 'email';
-    //     return NextResponse.json(
-    //       { success: false, message: `Profile with this ${conflictField} already exists` },
-    //       { status: 409 }
-    //     );
-    //   }
-    // }
-
+  
     // Validate dropdown fields
     if (body.blood_group && !BLOOD_GROUPS.includes(body.blood_group)) {
       return NextResponse.json(
@@ -59,14 +41,14 @@ export async function POST(request) {
     }
 
     // Generate UUIDs if not provided
-    const prodile_id = body.prodile_id || uuidv4();
+    const prodile_id = body.prodile_id;
 
     // Create new profile
     const profile = new Education({
       class_name: body.class_name,
       year: body.year,
       institute: body.institute,
-      prodile_id,
+      prodile_id: body.prodile_id,
       created_by: body.created_by
     });
 
@@ -101,19 +83,21 @@ export async function POST(request) {
 }
 
 
-export async function GET(request) {
+export async function GET() {
+ 
   try {
     await connectToMongo();
+    
 
     // Retrieve all customers with populated devices
     const customers = await Education.find({});
-    console.log("📌 Record Data:", customers);
+    console.log("📌 Educations Data:", customers);
 
     return NextResponse.json(
       { 
         success: true, 
-        message: "Record retrieved successfully",
-        customers: customers
+        message: "Educations Record retrieved successfully",
+        educations: customers
       },
       { status: 200 }
     );
@@ -264,47 +248,30 @@ export async function PUT(request) {
     console.log("Received update request with body:", body);
 
     // Validate required fields
-    if (!body.class_name || !body.year || !body.institute) {
+    if (!body.class_name || !body.year || !body.institute || !body.prodile_id) {
       return NextResponse.json(
-        { success: false, message: "ID, first name and last name are required" },
+        { success: false, message: "All fields are required including profile ID." },
         { status: 400 }
       );
     }
 
- 
-
-    // Check for existing profile with same CNIC or email (excluding current)
-    const existingConditions = [];
-    if (body.class_name) existingConditions.push({ class_name: body.class_name, _id: { $ne: body._id } });
-    if (body.institute) existingConditions.push({ institute: body.institute, _id: { $ne: body._id } });
-    
-    if (existingConditions.length > 0) {
-      const existingProfile = await Education.findOne({
-        $or: existingConditions
-      });
-      
-      if (existingProfile) {
-        const conflictField = existingProfile.class_name === body.class_name ? 'class_name' : 'year';
-        return NextResponse.json(
-          { success: false, message: `Another profile with this ${conflictField} already exists` },
-          { status: 409 }
-        );
-      }
-    }
-
     // Build update data
     const updateData = {
-        class_name: body.class_name,
-        year: body.year,
-        institute: body.institute,
-        prodile_id: body.prodile_id,
-        updated_at: Date.now(),
-        updated_by: body.updated_by
+      class_name: body.class_name,
+      year: body.year,
+      institute: body.institute,
+      prodile_id: body.prodile_id,
+      updated_at: Date.now(),
+      updated_by: body.updated_by || "system",
     };
 
-    // Update the profile
+    console.log("Updating record with data:", updateData);
+
+    // Use body._id for MongoDB findByIdAndUpdate
+    console.log("Using _id for update:", body._id);
+    
     const updatedProfile = await Education.findByIdAndUpdate(
-      body._id,
+      body._id, // Use _id for MongoDB operations
       updateData,
       { new: true }
     );
@@ -317,10 +284,10 @@ export async function PUT(request) {
     }
 
     return NextResponse.json(
-      { 
-        success: true, 
-        message: "Record updated successfully", 
-        profile: updatedProfile 
+      {
+        success: true,
+        message: "Record updated successfully",
+        person: updatedProfile, // match frontend expected key
       },
       { status: 200 }
     );
@@ -328,9 +295,9 @@ export async function PUT(request) {
     console.error("❌ Record Update Error:", {
       message: error.message,
       stack: error.stack,
-      fullError: error
+      fullError: error,
     });
-    
+
     return NextResponse.json(
       { success: false, message: "Internal Server Error" },
       { status: 500 }

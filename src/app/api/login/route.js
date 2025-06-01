@@ -16,7 +16,7 @@ export async function POST(request) {
 
     const body = await request.json();
 
-    if (!body.email || !body.password || !body.user_type) {
+    if (!body.email || !body.password) {
       return NextResponse.json(
         { success: false, message: 'Email and password are required or select user role' },
         { status: 400 }
@@ -38,14 +38,14 @@ export async function POST(request) {
       );
     }
 
-    const { email, password,user_type } = body;
+    const { email, password } = body;
     console.log("body data",body);
 
     
    
   
 
-    const customer = await Users.findOne({ email,password,user_type });
+    const customer = await Users.findOne({ email,password });
    
 
     if (!customer) {

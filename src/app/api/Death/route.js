@@ -87,19 +87,19 @@ export async function POST(request) {
 }
 
 
-export async function GET(request) {
+export async function GET() {
   try {
     await connectToMongo();
 
     // Retrieve all customers with populated devices
     const customers = await Death.find({});
-    console.log("📌 Record Data:", customers);
+    console.log("📌 Deaths Data:", customers);
 
     return NextResponse.json(
       { 
         success: true, 
-        message: "Record retrieved successfully",
-        customers: customers
+        message: "Deaths record retrieved successfully",
+        deaths: customers
       },
       { status: 200 }
     );

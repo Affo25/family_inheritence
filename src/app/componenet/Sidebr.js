@@ -21,8 +21,8 @@ function Sidebr() {
 
   const customerMenus = [
     { menu_url: '/Dashboard', menu_title: 'Dashboard', icon: 'ni-dashlite' },
-    { menu_url: '/Dashboard/PersonDetail', menu_title: 'Person Detail', icon: 'ni-user' },
-    { menu_url: '/Dashboard/collections', menu_title: 'Education Detail', icon: 'ni-activity' },
+    { menu_url: '/Dashboard/Profiles', menu_title: 'Profiles', icon: 'ni-user-list-fill' },
+    { menu_url: '/Dashboard/Users', menu_title: 'Users', icon: 'ni-user' },
   ];
 
   // const menuList = role === 'Admin' ? adminMenus : customerMenus;
@@ -39,7 +39,7 @@ function Sidebr() {
   return (
     <>
       {loading && (
-        <div className="fixed top-0 left-0 right-0 h-[3px] bg-blue-500 z-[9999] animate-pulse transition-all duration-300" />
+        <div className="fixed top-0 left-0 right-0 h-[1px] bg-blue-500 z-[9999] animate-pulse transition-all duration-300" />
       )}
 
       <div className="nk-sidebar nk-sidebar-fixed is-light" data-content="sidebarMenu">
@@ -60,7 +60,7 @@ function Sidebr() {
                 srcSet="/images/logo-dark2x.png 2x"
                 alt="logo-dark"
               />
-              <span className="nio-version">QRCode Generator</span>
+              <span className="nio-version">Family Inheritence</span>
             </Link>
           </div>
           <div className="nk-menu-trigger mr-n2">

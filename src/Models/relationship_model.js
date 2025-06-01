@@ -24,12 +24,14 @@ const RelationShipModelSchema = new mongoose.Schema({
         required: true,
         enum: ["Married", "Divorced", "Widowed", "Separated", "Other"]
     },
-    status: {
-        type: String,
-        required: true,
-        default: "",
-        enum: ["Active", "Inactive"],
-        required: true,
+    date: {
+        type: Date,
+        validate: {
+            validator: function(date) {
+                return date <= new Date();
+            },
+            message: 'Birth date cannot be in the future'
+        }
     },
     created_on: {
         type: Date,

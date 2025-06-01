@@ -9,8 +9,7 @@ const useLoginStore = create((set, get) => ({
   error: null,
   formData: {
     email: '',
-    password: '',
-    user_type:''
+    password: ''
   },
   formErrors: {},
   isAuthenticated: false,
@@ -35,9 +34,6 @@ const useLoginStore = create((set, get) => ({
       errors.password = 'Password is required';
     }
 
-    if (!formData.user_type) {
-      errors.password = 'Select User Type';
-    }
 
     set({ formErrors: errors });
     return Object.keys(errors).length === 0;
@@ -60,11 +56,11 @@ const useLoginStore = create((set, get) => ({
 
       if (res.data && res.data.success) {
         const { token, user } = res.data;
+        console.log("login user detail",user);
 
         // Store auth data in localStorage
         localStorage.setItem('token', token);
         localStorage.setItem('user', JSON.stringify(user));
-        localStorage.setItem('user-role', user.user_type || 'User');
         
 
         // Set auth header for future requests
@@ -73,7 +69,7 @@ const useLoginStore = create((set, get) => ({
         toast.success('Login successful!');
 
         set({
-          formData: { email: '', password: '', user_type: '' },
+          formData: { email: '', password: '' },
           loading: false,
           error: null,
           isAuthenticated: true,
