@@ -21,10 +21,16 @@ export async function GET(request) {
     const search = searchParams.get('search');
 
     const skip = (page - 1) * limit;
-    
 
-    const query = {};
+    // Base query - father_id and mother_id must be null or undefined
+    const query = {
+      father_id: "",
+      mother_id: "",
+    };
+
+    // Optional filters
     if (status) query.status = status;
+
     if (search) {
       query.$or = [
         { first_name: { $regex: search, $options: 'i' } },
@@ -70,6 +76,7 @@ export async function GET(request) {
     );
   }
 }
+
 
 
 //GET API to Retrieve Profiles
@@ -266,8 +273,8 @@ export async function POST(request) {
     const mother_id = form.get('mother_id') || '';
 
     // If grandparents still use ObjectId
-    const gr_father_id = toObjectIdOrNull(form.get('gr_father_id'));
-    const gr_mother_id = toObjectIdOrNull(form.get('gr_mother_id'));
+    const gr_father_id = form.get('gr_father_id');
+    const gr_mother_id = form.get('gr_mother_id');
 
     console.log("Parent UUIDs:");
     console.log("father_id (UUID):", father_id);
@@ -429,31 +436,31 @@ export async function PUT(request) {
       );
     }
 
-    // Validate MongoDB ID format
-    if (!/^[0-9a-fA-F]{24}$/.test(_id)) {
-      return NextResponse.json(
-        { success: false, message: "Invalid ID format. Must be a MongoDB ObjectId." },
-        { status: 400 }
-      );
-    }
+    // // Validate MongoDB ID format
+    // if (!/^[0-9a-fA-F]{24}$/.test(_id)) {
+    //   return NextResponse.json(
+    //     { success: false, message: "Invalid ID format. Must be a MongoDB ObjectId." },
+    //     { status: 400 }
+    //   );
+    // }
 
-    // Validate UUID format for father_id and mother_id
-    const uuidRegex =
-      /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
+    // // Validate UUID format for father_id and mother_id
+    // const uuidRegex =
+    //   /^[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[1-5][0-9a-fA-F]{3}-[89abAB][0-9a-fA-F]{3}-[0-9a-fA-F]{12}$/;
 
-    if (father_id && !uuidRegex.test(father_id)) {
-      return NextResponse.json(
-        { success: false, message: "Invalid father_id UUID format." },
-        { status: 400 }
-      );
-    }
+    // if (father_id && !uuidRegex.test(father_id)) {
+    //   return NextResponse.json(
+    //     { success: false, message: "Invalid father_id UUID format." },
+    //     { status: 400 }
+    //   );
+    // }
 
-    if (mother_id && !uuidRegex.test(mother_id)) {
-      return NextResponse.json(
-        { success: false, message: "Invalid mother_id UUID format." },
-        { status: 400 }
-      );
-    }
+    // if (mother_id && !uuidRegex.test(mother_id)) {
+    //   return NextResponse.json(
+    //     { success: false, message: "Invalid mother_id UUID format." },
+    //     { status: 400 }
+    //   );
+    // }
 
     const existingProfile = await Profile.findById(_id).lean();
     if (!existingProfile) {

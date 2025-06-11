@@ -2,13 +2,15 @@
 
 import "bootstrap/dist/css/bootstrap.min.css";
 import dynamic from "next/dynamic";
-import Sidebar from "../componenet/Sidebr";
+import Sidebar from "../componenet/Theme_component/Sidebr";
 import { ToastProvider } from '../../app/providers/ToastProvider';
 import Script from "next/script";
-import Header from "../componenet/Headers";
+import Header from "../componenet/Theme_component/Headers";
 import { Inter } from "next/font/google";
-import { usePathname } from 'next/navigation';
-import Footers from "../componenet/Footers";
+import { usePathname, useRouter } from 'next/navigation';
+import Footers from "../componenet/Theme_component/Footers";
+import GlobalLoader from "../componenet/globalLoader";
+import { useEffect, useState } from "react";
 
 const BootstrapBundle = dynamic(() => import("bootstrap/dist/js/bootstrap.bundle.min.js"), { ssr: false });
 const Jquery = dynamic(() => import("jquery/dist/jquery.min.js"), { ssr: false });
@@ -17,13 +19,31 @@ const inter = Inter({ subsets: ["latin"] });
 
 export default function DashboardLayout({ children }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const [loading, setLoading] = useState(false);
+
+  // Listen to route changes to show/hide loader
+  useEffect(() => {
+    const handleStart = () => setLoading(true);
+    const handleEnd = () => setLoading(false);
+
+    router.events?.on('routeChangeStart', handleStart);
+    router.events?.on('routeChangeComplete', handleEnd);
+    router.events?.on('routeChangeError', handleEnd);
+
+    return () => {
+      router.events?.off('routeChangeStart', handleStart);
+      router.events?.off('routeChangeComplete', handleEnd);
+      router.events?.off('routeChangeError', handleEnd);
+    };
+  }, [router]);
 
   return (
     <div className={`nk-app-root ${inter.className}`}>
+      <GlobalLoader visible={loading} />
+
       <div className="nk-main">
-        {/* Sidebar */}
         <Sidebar />
-        {/* Main Content */}
         <div className="nk-wrap">
           <Header />
           <div className="nk-content">
@@ -35,7 +55,7 @@ export default function DashboardLayout({ children }) {
         </div>
       </div>
 
-      {/* Toast Notifications */}
+      {/* Toast Provider if needed globally */}
       <ToastProvider />
 
       {/* Load scripts asynchronously */}

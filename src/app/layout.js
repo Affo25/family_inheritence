@@ -6,6 +6,7 @@ import TopLoadingBar from './componenet/loading';
 
 import { Inter } from 'next/font/google';
 import Script from 'next/script';
+import GlobalLoader from "./componenet/globalLoader";
 
 const inter = Inter({ subsets: ['latin'] });
 
@@ -19,7 +20,7 @@ export default function RootLayout({ children }) {
     <html lang="en">
       <body className={`bg-lighter npc-general has-sidebar ${inter.className}`}>
         {children}
-        <TopLoadingBar />
+        <GlobalLoader />
 
         {/* Scripts are okay here */}
         <Script src="/Content/assets/js/bundle.js?ver=1.4.0" strategy="afterInteractive" />

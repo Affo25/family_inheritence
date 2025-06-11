@@ -107,6 +107,7 @@ export async function GET(request) {
         .lean(),
       Profile.countDocuments(query)
     ]);
+    console.log(profiles);
 
     return NextResponse.json(
       { 

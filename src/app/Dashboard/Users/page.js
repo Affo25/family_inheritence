@@ -6,7 +6,7 @@ import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 import { toast } from 'react-toastify';
 import userStore from '../../stores/userStore';
-import UserDeleteModal from "../../componenet/userDeleteModal";
+import DeleteModal from "../../componenet/DeleteModal/delete_modal";
 
 function Page() {
     // State for pagination and search
@@ -41,6 +41,32 @@ function Page() {
     // Calculate pagination
     const offset = currentPage * itemsPerPage;
     const currentUsers = users.slice(offset, offset + itemsPerPage);
+
+
+const [userToDelete, setUserToDelete] = useState(null);
+
+  const handleDelete = async (personId) => {
+    console.log("get id",personId);
+   try {
+    const success = await deleteUser(personId);
+    if (success) {
+      toast.success('User deleted successfully');
+      setCloseDeleteModal();
+      fetchUsers(); // Refresh the user list
+    } else {
+      toast.error('Failed to delete user');
+    }
+  } catch (error) {
+    toast.error(error.message || 'Error deleting user');
+    console.error('Delete error:', error);
+  }
+  };
+
+// Open delete modal
+const openDeleteModal = (user) => {
+  setUserToDelete(user);
+  setIsDeleteModalOpen(true);
+};
 
     // Handle page change
     const handlePageClick = (event) => {
@@ -133,28 +159,13 @@ function Page() {
         await saveUser();
     };
 
-    const handleDelete = async (personId,userName) => {
-    try {
-      const success = await deleteUser(personId);
-      if (success) {
-        setCloseDeleteModal();
-        console.log('User deleted successfully');
-      } else {
-        console.error('Failed to delete user');
-      }
-    } catch (error) {
-      console.error('Error in handleDelete:', error);
-    }
-  };
+  
 
-  const openDeleteModal = (person) => {
-    setPersonToDelete(person);
-    setIsDeleteModalOpen(true);
-  };
 
-     const setCloseDeleteModal = () => {
+
+    const setCloseDeleteModal = () => {
     setIsDeleteModalOpen(false);
-    setPersonToDelete(null);
+    setUserToDelete(null);
   };
 
     // Fetch users on component mount
@@ -304,7 +315,7 @@ function Page() {
                                                                     </button>
                                                                     <button
                                                                         className="btn btn-danger btn-sm ml-1"
-                                                                        onClick={openDeleteModal}
+                                                                        onClick={()=>openDeleteModal(user)}
                                                                     >
                                                                         <span>Delete</span>
                                                                     </button>
@@ -526,12 +537,12 @@ function Page() {
             {modalOpen && <div className="modal-backdrop fade show"></div>}
 
              {isDeleteModalOpen && (
-          <UserDeleteModal
-            personToDelete={personToDelete}
+                <DeleteModal
+                personToDelete={userToDelete}
             loading={loading}
             setCloseDeleteModal={setCloseDeleteModal}
             handleDelete={handleDelete}
-          />
+        />
         )}
         </div>
         

@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import useProfileStore from '../stores/seacrh_profile';
 
 function SearchProfileModal({
-    currentPersons= (event )=> {},
+    currentPersons,
     offset = 0,
     close,
     handleSelectPerson,

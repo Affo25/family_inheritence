@@ -5084,7 +5084,7 @@ input[type="radio"]:checked ~ label { cursor: default; }
 
 .nav-tabs .nav-link:before, .nav-tabs .nav-link:after { position: absolute; content: ''; }
 
-.nav-tabs .nav-link:after { left: 0; right: 0; bottom: 0; height: 3px; background: #6576ff; opacity: 0; }
+.nav-tabs .nav-link:after { left: 0; right: 0; bottom: 0; height: 3px; background: #fb8500; opacity: 0; }
 
 .nav-tabs .nav-link.active { color: #6576ff; border: none; background-color: transparent; }
 

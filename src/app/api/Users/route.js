@@ -148,20 +148,21 @@ export async function PUT(request) {
 
 // DELETE API to delete a user
 export async function DELETE(request) {
-  try {
-    // Connect to MongoDB
-    await connectToMongo();
-    
-    const { searchParams } = new URL(request.url);
+  const { searchParams } = new URL(request.url);
     const id = searchParams.get('_id');
-    
+    console.log("id is:",id);
+
     if (!id) {
       return NextResponse.json(
         { success: false, message: "User ID is required" },
         { status: 400 }
       );
     }
+  try {
+    // Connect to MongoDB
+    await connectToMongo();
     
+   
     // Delete user
     const deletedUser = await Users.findByIdAndDelete(id);
     

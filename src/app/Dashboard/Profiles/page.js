@@ -1,25 +1,18 @@
 "use client";
 import React, { useState, useEffect } from "react";
-import 'react-datepicker/dist/react-datepicker.css';
+import  'react-datepicker/dist/react-datepicker.css';
 import ReactPaginate from "react-paginate";
 import ExcelJS from 'exceljs';
 import { saveAs } from 'file-saver';
 import { toast } from 'react-toastify';
 import usePersonStore from '../../stores/profile_stores';
-import useEducationStore from '../../stores/Education_store';
 import useProfileStore from '../../stores/profile_stores';
-import useDeathStore from '../../stores/death_store';
-import useRelationshipStore from '../../stores/relationship_store';
-import DatePicker from 'react-datepicker';
-import Dropdown from 'react-bootstrap/Dropdown';
-import DeleteModal from "../../componenet/deleteModal";
+import DeleteModal from "../../componenet/DeleteModal/delete_modal";
 import SearchProfileModal from "../../componenet/SearchProfileModal";
 import PersonDataTable from "../../componenet/dataTable";
-import MarriageDeleteModal from "../../componenet/marriageDeleteModal";
-import UserCard from "../../componenet/user_profile";
-import DeathDataTable from "../../componenet/death_dataTable";
-import EducationDataTable from "../../componenet/education_dataTable";
-import EducationDeleteModal from "../../componenet/educationDeleteModal";
+import DatePicker from 'react-datepicker';
+
+
 
 function Page() {
   const {
@@ -38,45 +31,7 @@ function Page() {
     getuserRecord
   } = usePersonStore();
 
-  const {
-    educations,
-    loading: educationLoading,
-    formData: educationFormData,
-    formErrors: educationFormErrors,
-    setFormData: setEducationFormData,
-    validateForm: validateEducationForm,
-    addCustomer: addEducation,
-    updateCustomer: updateEducation,
-    fetchCustomers: fetchEducations,
-    deleteCustomer: deleteEducation
-  } = useEducationStore();
-
-  const {
-    deaths,
-    loading: deathLoading,
-    formData: deathFormData,
-    formErrors: deathFormErrors,
-    setFormData: setdeathFormData,
-    validateForm: validatedeathForm,
-    addCustomer: adddeath,
-    updateCustomer: updatedeath,
-    fetchCustomers: fetchdeaths,
-    deleteCustomer: deletedeath
-  } = useDeathStore();
-
-  const {
-    relationship,
-    loading: RelationshipLoading,
-    formData: RelationshipFormData,
-    formErrors: RelationshipFormErrors,
-    setFormData: setRelationshipFormData,
-    validateForm: validateRelationshipForm,
-    addCustomer: addRelationship,
-    updateCustomer: updateRelationship,
-    fetchCustomers: fetchRelationship,
-    deleteCustomer: deleteRelationship
-  } = useRelationshipStore();
-
+ 
   const {
     profile: filteredProfile,
     loading: loadings,
@@ -98,14 +53,10 @@ function Page() {
   // Define enums for dropdown options
   const MARITAL_STATUS = ['Single', 'Married', 'Divorced', 'Widowed', 'Separated'];
   const BLOOD_GROUPS = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-', 'Unknown'];
-  const MARRIAGE_STATUS = [
-    "Married", "Divorced", "Widowed", "Separated", "Other"
-  ];
 
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isSearchModalOpen, setIsSearchModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
-  const [isEducationDeleteModalOpen, setIsEducationDeleteModalOpen] = useState(false);
 
   const [isEditMode, setIsEditMode] = useState(false);
   const [currentPersonId, setCurrentPersonId] = useState(null);
@@ -116,29 +67,19 @@ function Page() {
   const [currentMarriagePage, setCurrentMarriagePage] = useState(0);
   const personsPerPage = 5;
   const marriagePerPage = 0;
-  const [isDeleteMrrigeModalOpen, setIsDeleteMarriageModalOpen] = useState(false);
 
-  const [mrriageToDelete, setMaarriageToDelete] = useState(null);
   const [filteredMarriages, setFilteredMarriages] = useState([]);
-  const [searchMrrigeQuery, setSearchMarriageQuery] = useState("");
+  
   const [filteredPersons, setFilteredPersons] = useState([]);
   const [activeTab, setActiveTab] = useState('person-details');
-  const [selectedPersonId, setselectedPersonId] = useState(null);
   const [selectedPersonId1, setselectedPersonId1] = useState("");
   const [selectedPersonId2, setselectedPersonId2] = useState("");
   const [isMenuOpen, setIsMenuOpen] = useState(false); // Manage menu state
-  const [profiles, setProfiles] = useState(persons); // All records
   const [filteredProfiles, setFilteredProfiles] = useState([]); // Filtered result
   const [currentProfileKey, setCurrentProfileKey] = useState('');
   const [searchText, setSearchText] = useState("");
   const [person, setProfile] = useState(null); // Global in this component
   const [marriageList, setMarriageList] = useState([]); // For direct marriage records
-  const person1Profile = [];
-  const person2Profile = [];
-
-
-
-
   const [previewImage, setPreviewImage] = useState(null);
   const [selectedFile, setSelectedFile] = useState(null);
 
@@ -147,72 +88,10 @@ function Page() {
     setSearchText(text);
   };
 
-
-  // Search button click
-  const fetchSingleRecord = (userId) => {
-    getuserRecord(userId);
-
-  };
-
   // Search button click
   const handleSearchChanges = (query) => {
     setSearchQuery(query);
-    searchProfiles(query); // <- Make sure this function exists
-  };
-  const handleImageChange = (e) => {
-    const file = e.target.files[0];
-    if (file) {
-      // Validate file type
-      if (!file.type.match('image.*')) {
-        setFormErrors({ ...formErrors, profileImage: 'Only image files are allowed' });
-        return;
-      }
-
-      // Validate file size (2MB max)
-      if (file.size > 2 * 1024 * 1024) {
-        setFormErrors({ ...formErrors, profileImage: 'File size must be less than 2MB' });
-        return;
-      }
-
-      setSelectedFile(file);
-      setFormErrors({ ...formErrors, profileImage: '' });
-
-      // Create preview
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        setPreviewImage(reader.result);
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleRemoveImage = () => {
-    setPreviewImage(null);
-    setSelectedFile(null);
-    // Clear the file input
-    document.getElementById('profileImage').value = '';
-  };
-
-
-  const searcProfileDetails = () => {
-    searchProfiles();
-  }
-
-  // Handle search input change
-  const handleSearchProfileChange = (e) => {
-    const query = e.target.value;
-    setSearchProfileQuery(query);
-
-    // Debounce search
-    const timer = setTimeout(() => {
-      searchProfiles({
-        q: query,
-        page: 1, // Reset to first page on new search
-      });
-      setOffset(0);
-    }, 500);
-
-    return () => clearTimeout(timer);
+    searchProfiles(query);
   };
 
   // Toggle the dropdown visibility
@@ -245,12 +124,6 @@ function Page() {
     }
   }, [searchProfileQuery, persons]);
 
-  // Toggle the dropdown visibility
-  const toggleMenu = () => {
-    console.log(isMenuOpen);
-    setIsMenuOpen(!isMenuOpen);
-  };
-
   const offset = currentPage * personsPerPage;
   const currentPersons = filteredPersons.slice(offset, offset + personsPerPage);
 
@@ -261,9 +134,7 @@ function Page() {
     setCurrentPage(selected.selected);
   };
 
-  const handlesPageClick = (selected) => {
-    setCurrentMarriagePage(selected.selected);
-  };
+  
 
   // select person method
  const handleSelectPerson = (key, data) => {
@@ -307,7 +178,29 @@ setFormData({ [key]: personId });
 
 
   const handleSearchChange = (e) => {
-    setSearchQuery(e.target.value);
+    const query = e.target.value;
+    setSearchQuery(query);
+    
+    // Filter the persons data based on the search query
+    if (query.trim() === '') {
+      setFilteredPersons(persons);
+    } else {
+      const filtered = persons.filter(person => {
+        const searchLower = query.toLowerCase();
+        return (
+          (person.first_name?.toLowerCase().includes(searchLower) ?? false) ||
+          (person.last_name?.toLowerCase().includes(searchLower) ?? false) ||
+          (person.email?.toLowerCase().includes(searchLower) ?? false) ||
+          (person.contact?.toLowerCase().includes(searchLower) ?? false) ||
+          (person.cnic?.toLowerCase().includes(searchLower) ?? false) ||
+          (person.gender?.toLowerCase().includes(searchLower) ?? false) ||
+          (person.birth_place?.toLowerCase().includes(searchLower) ?? false) ||
+          (person.marital_status?.toLowerCase().includes(searchLower) ?? false) ||
+          (person.blood_group?.toLowerCase().includes(searchLower) ?? false)
+        );
+      });
+      setFilteredPersons(filtered);
+    }
   };
 
 
@@ -331,35 +224,18 @@ setFormData({ [key]: personId });
 
   useEffect(() => {
     fetchCustomers({ page: pagination.page });
-    fetchEducations();
-    fetchdeaths();
-    fetchRelationship();
-    console.log("relationship data:", relationship);
   }, []);
-
-  // Monitor changes to marriageRecords
+  
+  // Initialize filteredPersons when persons data is loaded
   useEffect(() => {
-    console.log("Marriage records updated in component:", marriageRecords);
-  }, [marriageRecords]);
+    setFilteredPersons(persons);
+  }, [persons]);
 
-  // Monitor changes to marriageList
-  useEffect(() => {
-    console.log("Marriage list updated in component:", marriageList);
-  }, [marriageList]);
 
   const handlePageChange = (newPage) => {
     fetchCustomers({ page: newPage });
   };
 
- 
-
-  // Fetch education records when currentPersonId changes
-  useEffect(() => {
-    if (currentPersonId) {
-      fetchEducations();
-    }
-    const fullName = personMap.get(formData.mother_id);
-  }, [currentPersonId]);
 
   const openSerchModal = (key) => {
     console.log("Opening search modal for key:", key);
@@ -423,9 +299,7 @@ setFormData({ [key]: personId });
   };
 
 
-  const closeSerchModal = () => {
-    setIsSearchModalOpen(false);
-  };
+
 
   const closeModals = () => {
     setMarriageList([]);
@@ -438,29 +312,10 @@ setFormData({ [key]: personId });
     setIsDeleteModalOpen(true);
   };
 
-  const opensDeleteModal = (person) => {
-    setMaarriageToDelete(person);
-    setIsDeleteMarriageModalOpen(true);
-  };
-
-  const setClosesDeleteModal = () => {
-    setIsDeleteMarriageModalOpen(false);
-    setMaarriageToDelete(null);
-  };
-
+  
   const setCloseDeleteModal = () => {
     setIsDeleteModalOpen(false);
     setPersonToDelete(null);
-  };
-
-  const setEducationCloseDeleteModal = () => {
-    setIsEducationDeleteModalOpen(false);
-    setPersonToDelete(null);
-  };
-
-  const openEducationDeleteModal = (person) => {
-    setPersonToDelete(person);
-    setIsEducationDeleteModalOpen(true);
   };
 
 
@@ -511,14 +366,7 @@ setFormData({ [key]: personId });
     setFormData({ [name]: value });
   };
 
-  const handleReltionshipInputChange = (e) => {
-    const { name, value } = e.target;
-    setRelationshipFormData({
-      [name]: value,
-    });
-  };
-
-
+ 
 
 
   const handleCheckboxChange = (e) => {
@@ -531,6 +379,7 @@ setFormData({ [key]: personId });
   };
 
   const handleEdit = (person) => {
+    console.log("call edit");
     setFormData({
       first_name: person.first_name || '',
       last_name: person.last_name || '',
@@ -558,19 +407,19 @@ setFormData({ [key]: personId });
       setPreviewImage(null);
     }
 
-    // Set the prodile_id in the education form data and clear any previous errors
-    setEducationFormData({
-      ...useEducationStore.getState().formData,
-      prodile_id: person._id
-    });
+    // // Set the prodile_id in the education form data and clear any previous errors
+    // setEducationFormData({
+    //   ...useEducationStore.getState().formData,
+    //   prodile_id: person._id
+    // });
 
-    // Clear any prodile_id validation errors
-    useEducationStore.setState({
-      formErrors: {
-        ...useEducationStore.getState().formErrors,
-        prodile_id: ''
-      }
-    });
+    // // Clear any prodile_id validation errors
+    // useEducationStore.setState({
+    //   formErrors: {
+    //     ...useEducationStore.getState().formErrors,
+    //     prodile_id: ''
+    //   }
+    // });
 
     setIsEditMode(true);
     setCurrentPersonId(person._id);
@@ -610,10 +459,6 @@ setFormData({ [key]: personId });
       toast.error("An error occurred. Please try again.");
     }
   };
-
-
-
-
 
   const exportJsonToExcel = async (fileName = 'persons_data.xlsx') => {
     const workbook = new ExcelJS.Workbook();
@@ -659,9 +504,9 @@ setFormData({ [key]: personId });
     saveAs(blob, fileName);
   };
 
-const personMap = new Map(
-  persons.map(p => [p.pid, `${p.first_name} ${p.last_name}`])
-);
+
+
+
 
 
   return (
@@ -712,10 +557,11 @@ const personMap = new Map(
           </div>
         )}
 
+
           <div style={{ marginTop: "10px" }} class="row">
 
             <div class="col-md-12">
-              <ul className="nav nav-tabs bg-dark rounded-top rounded-bottom">
+              <ul style={{backgroundColor:"#219ebc"}} className="nav nav-tabs  rounded-top rounded-bottom">
                 <li style={{ marginLeft: "10px" }} className="nav-item">
                   <a
                     className={`nav-link text-white ${activeTab === 'person-details' ? 'active' : ''}`}
@@ -746,7 +592,7 @@ const personMap = new Map(
                       handlePageChange={handlePageChange}
                       pagination={pagination}
                       status="Pending"
-                      currentPersons={currentPersons}
+                      currentPersons={filteredPersons}
                       persons={persons}
                       loading={loading}
                       searchQuery={searchQuery}
@@ -768,7 +614,7 @@ const personMap = new Map(
                       handlePageChange={handlePageChange}
                       pagination={pagination}
                       status="Approved"
-                      currentPersons={currentPersons}
+                      currentPersons={filteredPersons}
                       persons={persons}
                       loading={loading}
                       searchQuery={searchQuery}
@@ -808,7 +654,6 @@ const personMap = new Map(
                   </button>
                 </div>
                  <div class="card card-bordered card-preview">
-
                       <div class="card-inner-group">
                         <div class="card-inner p-0">
                           <form onSubmit={handleSubmit}>
@@ -1173,6 +1018,8 @@ const personMap = new Map(
           </div>
         )}
 
+
+       
        
 
         {isDeleteModalOpen && (

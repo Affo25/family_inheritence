@@ -26,7 +26,7 @@ const UserCard = ({singlePerson},person_info) => {
             </div>
           </div>
           <div className="team-details">
-            <p>{profile.bio || profile.description || 'No additional information available.'}</p>
+            <p>{profile.pid || profile.description || 'No additional information available.'}</p>
             {profile.contact && <p><strong>Contact:</strong> {profile.contact}</p>}
             {profile.gender && <p><strong>Gender:</strong> {profile.gender}</p>}
           </div>

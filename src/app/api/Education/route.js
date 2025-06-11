@@ -83,31 +83,51 @@ export async function POST(request) {
 }
 
 
-export async function GET() {
- 
+export async function GET(req) {
+  const { searchParams } = new URL(req.url);
+  const id = searchParams.get("id");
+  
   try {
     await connectToMongo();
     
-
-    // Retrieve all customers with populated devices
-    const customers = await Education.find({});
-    console.log("📌 Educations Data:", customers);
-
-    return NextResponse.json(
-      { 
-        success: true, 
-        message: "Educations Record retrieved successfully",
-        educations: customers
-      },
-      { status: 200 }
-    );
+    // If ID is provided, find education records for that profile
+    if (id) {
+      console.log(`Looking for education records with profile ID: ${id}`);
+      
+      const educationRecords = await Education.find({ prodile_id: id });
+      console.log(`Found ${educationRecords.length} education records for profile ID ${id}`);
+      
+      return NextResponse.json(
+        { 
+          success: true, 
+          message: `Found ${educationRecords.length} education records for profile`,
+          educations: educationRecords
+        },
+        { status: 200 }
+      );
+    } 
+    // If no ID is provided, return all education records
+    else {
+      const allEducationRecords = await Education.find({});
+      console.log(`Found ${allEducationRecords.length} total education records`);
+      
+      return NextResponse.json(
+        { 
+          success: true, 
+          message: "All education records retrieved successfully",
+          educations: allEducationRecords
+        },
+        { status: 200 }
+      );
+    }
   } catch (error) {
     console.error("❌ Detailed Error:", {
       message: error.message,
       stack: error.stack,
       fullError: error
     });
-    console.error("Error retrieving Record:", error);
+    console.error("Error retrieving education records:", error);
+    
     return NextResponse.json(
       { success: false, message: "Internal Server Error" },
       { status: 500 }

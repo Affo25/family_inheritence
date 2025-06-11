@@ -140,6 +140,13 @@ const useEducationStore = create((set) => ({
       set({ loading: true });
       
       console.log("Deleting education record with ID:", recordId);
+      
+      // Get the current state to find the profile ID before deletion
+      const { educations } = useEducationStore.getState();
+      const recordToDelete = educations.find(record => record._id === recordId);
+      const profileId = recordToDelete?.prodile_id;
+      
+      console.log("Found record to delete:", recordToDelete);
 
       const response = await axios.delete(`/api/Education?_id=${recordId}`);
 
@@ -151,6 +158,21 @@ const useEducationStore = create((set) => ({
           educations: state.educations.filter((edu) => edu._id !== recordId),
           loading: false,
         }));
+        
+        // If we have the profile ID, refresh the records for this profile
+        if (profileId) {
+          console.log(`Refreshing education records for profile ID: ${profileId}`);
+          const updatedResponse = await axios.get(`/api/Education?id=${profileId}`);
+          
+          if (updatedResponse.data?.success) {
+            set({
+              educations: Array.isArray(updatedResponse.data.educations) 
+                ? updatedResponse.data.educations 
+                : updatedResponse.data.educations ? [updatedResponse.data.educations] : [],
+              loading: false,
+            });
+          }
+        }
         
         console.log("Education record deleted successfully");
         return true;
@@ -171,15 +193,31 @@ const useEducationStore = create((set) => ({
   },
 
 
-  fetchCustomers: async () => {
+  fetchCustomers: async (profileId = null) => {
   try {
     set({ loading: true });
+    
+    let url = '/api/Education';
+    if (profileId) {
+      url = `/api/Education?id=${profileId}`;
+      console.log(`Fetching education records for profile ID: ${profileId}`);
+    }
 
-    const response = await axios.get(`/api/Education`);
+    const response = await axios.get(url);
 
-    if (response.data?.success && Array.isArray(response.data.educations)) {
-      const records = response.data.educations;
-      console.log("server responses",records);
+    if (response.data?.success) {
+      let records = [];
+      
+      // Handle both single object and array responses
+      if (Array.isArray(response.data.educations)) {
+        records = response.data.educations;
+      } else if (response.data.educations) {
+        // If it's a single object, convert to array
+        records = [response.data.educations];
+      }
+      
+      console.log("Education records fetched:", records);
+      
       // Directly set the records from the server response
       set({
         educations: records,
@@ -187,16 +225,20 @@ const useEducationStore = create((set) => ({
         error: null
       });
 
-      console.log('Educations records updated:', records);
       return records; // returning the array for external use
     } else {
       const errorMessage = response.data?.message || 'No records found';
-      toast.error(errorMessage);
-      set({ loading: false, error: errorMessage });
+      console.log("No education records found:", errorMessage);
+      set({ 
+        educations: [], 
+        loading: false, 
+        error: errorMessage 
+      });
       return [];
     }
   } catch (error) {
     const errorMessage = error.response?.data?.message || 'Request failed';
+    console.error("Error fetching education records:", error);
     toast.error(errorMessage);
     set({ loading: false, error: errorMessage });
     return [];

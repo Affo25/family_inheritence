@@ -44,15 +44,23 @@ export async function POST(request) {
 
   
 
-    // Generate UUIDs if not provided
-    const prodile_id = body.prodile_id || uuidv4();
+    // Use either prodile_id or profile_id from the request
+    const profileId = body.prodile_id || body.profile_id;
+    
+    if (!profileId) {
+      return NextResponse.json(
+        { success: false, message: "Profile ID is required" },
+        { status: 400 }
+      );
+    }
 
     // Create new profile
     const profile = new Death({
         death_date: body.death_date,
         death_place: body.death_place,
         death_reason: body.death_reason,
-      prodile_id,
+      prodile_id: profileId, // Handle both field names
+      profile_id: profileId, // Store in both fields for consistency
       created_by: body.created_by
     });
 
@@ -87,35 +95,66 @@ export async function POST(request) {
 }
 
 
-export async function GET() {
+
+export async function GET(req) {
+  const { searchParams } = new URL(req.url);
+  const id = searchParams.get("id");
+
   try {
     await connectToMongo();
 
-    // Retrieve all customers with populated devices
-    const customers = await Death.find({});
-    console.log("📌 Deaths Data:", customers);
+    if (id) {
+      console.log(`🔍 Looking for single death record with prodile_id/profile_id: ${id}`);
 
-    return NextResponse.json(
-      { 
-        success: true, 
-        message: "Deaths record retrieved successfully",
-        deaths: customers
-      },
-      { status: 200 }
-    );
+      // Find one record that matches either prodile_id or profile_id
+      const deathRecord = await Death.findOne({
+        $or: [
+          { prodile_id: id },
+        ]
+      });
+
+      if (!deathRecord) {
+        return NextResponse.json(
+          { success: false, message: "Death record not found for the given profile ID" },
+          { status: 404 }
+        );
+      }
+
+      return NextResponse.json(
+        {
+          success: true,
+          message: "Death record retrieved successfully",
+          death: deathRecord,
+        },
+        { status: 200 }
+      );
+    } else {
+      const allDeathRecords = await Death.find({});
+      console.log(`📦 Found ${allDeathRecords.length} total death records`);
+
+      return NextResponse.json(
+        {
+          success: true,
+          message: "All death records retrieved successfully",
+          deaths: allDeathRecords,
+        },
+        { status: 200 }
+      );
+    }
   } catch (error) {
-    console.error("❌ Detailed Error:", {
+    console.error("❌ Error retrieving death records:", {
       message: error.message,
       stack: error.stack,
-      fullError: error
+      fullError: error,
     });
-    console.error("Error retrieving Record:", error);
+
     return NextResponse.json(
       { success: false, message: "Internal Server Error" },
       { status: 500 }
     );
   }
 }
+
 
 // GET API to Retrieve Profiles
 // export async function GET(request) {
@@ -278,12 +317,16 @@ export async function PUT(request) {
       }
     }
 
+    // Use either prodile_id or profile_id from the request
+    const profileId = body.prodile_id || body.profile_id;
+    
     // Build update data
     const updateData = {
         death_date: body.death_date,
         death_place: body.death_place,
         death_reason: body.death_reason,
-        prodile_id: body.prodile_id,
+        prodile_id: profileId,
+        profile_id: profileId, // Store in both fields for consistency
         updated_at: Date.now(),
         updated_by: body.updated_by
     };

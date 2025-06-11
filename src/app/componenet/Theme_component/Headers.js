@@ -3,8 +3,8 @@
 import React, { useEffect, useState } from 'react';
 import 'bootstrap/dist/css/bootstrap.min.css';
 import { useRouter } from 'next/navigation';
-import useUserRoleStore from '../stores/userRoleStore';
-import useLoginStore from '../stores/LoginStore';
+import useUserRoleStore from '../../stores/userRoleStore';
+import useLoginStore from '../../stores/LoginStore';
 
 
 export default function Headers() {

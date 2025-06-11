@@ -4,6 +4,7 @@ import React, { useEffect, useState } from 'react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { usePathname, useRouter } from 'next/navigation';
+import GlobalLoader from '../globalLoader';
 
 function Sidebr() {
   const pathname = usePathname();
@@ -39,7 +40,8 @@ function Sidebr() {
   return (
     <>
       {loading && (
-        <div className="fixed top-0 left-0 right-0 h-[1px] bg-blue-500 z-[9999] animate-pulse transition-all duration-300" />
+        <GlobalLoader visible={loading}/>
+        // <div className="fixed top-0 left-0 right-0 h-[1px] bg-blue-500 z-[9999] animate-pulse transition-all duration-300" />
       )}
 
       <div className="nk-sidebar nk-sidebar-fixed is-light" data-content="sidebarMenu">
@@ -88,7 +90,7 @@ function Sidebr() {
        <Link
           href={menu.menu_url}
           className={`nk-menu-link block px-4 py-2 mx-2 rounded-md transition-colors duration-200 ${
-            isActive ? 'bg-primary text-white font-bold' : 'hover:bg-gray-100 text-gray-700'
+            isActive ? 'bg-info text-white font-bold' : 'hover:bg-gray-100 text-gray-700'
           }`}
         >
           <span className="nk-menu-icon">

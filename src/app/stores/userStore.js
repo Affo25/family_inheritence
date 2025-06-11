@@ -202,11 +202,11 @@ const userStore = create((set, get) => ({
     set({ loading: true, error: null });
     
     try {
-      const response = await axios.delete(`/api/Users?id=${userId}`);
+      const response = await axios.delete(`/api/Users?_id=${userId}`);
       
       if (response.data && response.data.success) {
         toast.success('User deleted successfully!');
-        get().fetchUsers(); // Refresh user list
+        // get().fetchUsers(); // Refresh user list
         
         return { success: true };
       } else {

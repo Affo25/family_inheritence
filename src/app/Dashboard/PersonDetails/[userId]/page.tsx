@@ -2,9 +2,6 @@
 import React, { useState, useEffect } from "react";
 import UserCard from "../../../componenet/user_profile";
 import 'react-datepicker/dist/react-datepicker.css';
-import ReactPaginate from "react-paginate";
-import ExcelJS from 'exceljs';
-import { saveAs } from 'file-saver';
 import { toast } from 'react-toastify';
 import usePersonStore from '../../../stores/profile_stores';
 import useEducationStore from '../../../stores/Education_store';
@@ -12,26 +9,28 @@ import useProfileStore from '../../../stores/profile_stores';
 import useDeathStore from '../../../stores/death_store';
 import useRelationshipStore from '../../../stores/relationship_store';
 import DatePicker from 'react-datepicker';
-import Dropdown from 'react-bootstrap/Dropdown';
-import DeleteModal from "../../../componenet/deleteModal";
+import DeleteModal from "../../../componenet/DeleteModal/delete_modal";
 import SearchProfileModal from "../../../componenet/SearchProfileModal";
-import PersonDataTable from "../../../componenet/dataTable";
-import MarriageDeleteModal from "../../../componenet/marriageDeleteModal";
-import DeathDataTable from "../../../componenet/death_dataTable";
-import EducationDataTable from "../../../componenet/education_dataTable";
-import EducationDeleteModal from "../../../componenet/educationDeleteModal";
-import DeathDeleteModal from "../../../componenet/deathDeleteModal";
 import { useRouter } from 'next/navigation'; // Correct import for App Router
 import ProfileDataTable from "../../../componenet/profile_table";
-interface Props {
-  params: { userId: string };
+import DynamicTable from "../../../componenet/DataTables/dynamicTable";
+
+
+interface PageProps {
+  params: {
+    userId: string;
+  };
+  searchParams?: {
+    [key: string]: string | string[] | undefined;
+  };
 }
 
-function PersonDetailsPage({ params }: Props) {
+export default function PersonDetailsPage({ params }: PageProps) {
 
   const id = params.userId;
   const {
     persons,
+    data,
     marriageRecords,
     pagination,
     loading,
@@ -45,6 +44,7 @@ function PersonDetailsPage({ params }: Props) {
     deleteCustomer,
     getuserRecord,
     getSinglePerson,
+    getUserChildrenData: fetchRecords,
     singlePerson
   } = usePersonStore();
 
@@ -62,7 +62,7 @@ function PersonDetailsPage({ params }: Props) {
   } = useEducationStore();
 
   const {
-    deaths,
+    death,
     loading: deathLoading,
     formData: deathFormData,
     formErrors: deathFormErrors,
@@ -162,13 +162,13 @@ function PersonDetailsPage({ params }: Props) {
 
   const setRecordInfields=()=>{
     if (!singlePerson || !singlePerson._id) {
-      toast.error("Cannot edit: No valid person data available");
+      // toast.error("Cannot edit: No valid person data available");
       return;
     }
     
     // Validate MongoDB ID format
     if (!/^[0-9a-fA-F]{24}$/.test(singlePerson._id)) {
-      toast.error("Invalid person ID format");
+      // toast.error("Invalid person ID format");
       return;
     }
     
@@ -222,7 +222,7 @@ function PersonDetailsPage({ params }: Props) {
   }
 
   setRelationshipFormData({
-    _id: relationship._id,
+    _id: relationship._id, // important for PUT updates
     person1_id: relationship.person1_id ?? '',
     person2_id: relationship.person2_id ?? '',
     rid: relationship.rid ?? '',
@@ -293,7 +293,7 @@ function PersonDetailsPage({ params }: Props) {
     if (education && typeof education === 'object') {
       // Set form data with the selected education record
       setEducationFormData({
-        prodile_id: education.prodile_id || singlePerson?.pid || '',
+        prodile_id: education.prodile_id || singlePerson?.pid || id || '',
         _id: education._id || '', // Add _id for update operation
         class_name: education.class_name || '',
         year: education.year || '',
@@ -303,42 +303,42 @@ function PersonDetailsPage({ params }: Props) {
     } else {
       // Set default form data with current person's ID for new record
       setEducationFormData({
-        prodile_id: singlePerson?.pid || '',
+        prodile_id: singlePerson?.pid || id || '',
         class_name: '',
         year: '',
         institute: ''
       });
-      console.log("Setting default education form data for new record");
+      console.log("Setting default education form data for new record with profile ID:", singlePerson?.pid || id);
     }
   };
 
    const modifyDethButton = (death) => {
-    console.log("Modifying deth record:", death);
+    console.log("Modifying death record:", death);
     
     setIsShowButton(true);
     setIsEditMode(true);
 
-    // Check if education exists and is an object before accessing its properties
+    // Check if death exists and is an object before accessing its properties
     if (death && typeof death === 'object') {
-      // Set form data with the selected education record
+      // Set form data with the selected death record
       setdeathFormData({
-        prodile_id: death.prodile_id || singlePerson?.pid || '',
+        profile_id: death.prodile_id || death.profile_id || singlePerson?.pid || id || '',
         _id: death._id || '', // Add _id for update operation
         death_place: death.death_place || '',
         death_reason: death.death_reason || '',
         death_date: death.death_date || ''
       });
-      console.log("Setting education form data for edit:", education);
+      console.log("Setting death form data for edit:", death);
     } else {
       // Set default form data with current person's ID for new record
       setdeathFormData({
-       prodile_id: death.prodile_id || singlePerson?.pid || '',
-        _id: death._id || '', // Add _id for update operation
-        death_place: death.death_place || '',
-        death_reason: death.death_reason || '',
-        death_date: death.death_date || ''
+        profile_id: singlePerson?.pid || id || '',
+        _id: '', 
+        death_place: '',
+        death_reason: '',
+        death_date: ''
       });
-      console.log("Setting default education form data for new record");
+      console.log("Setting default death form data for new record with profile ID:", singlePerson?.pid || id);
     }
   };
 
@@ -475,12 +475,12 @@ function PersonDetailsPage({ params }: Props) {
     // Update individual person states if needed
     if (key === "person1_id") {
       setselectedPersonId1(data.pid);
-    } else {
-      setselectedPersonId2(data.pid);
     }
 
     // ✅ This will work for your current store
-    setRelationshipFormData({ [key]: data.pid });
+    setRelationshipFormData({ 
+      [key]: data.pid 
+    });
     // Reset search and close modal
     //filteredProfiles.clear.();
     closeSerchModal();
@@ -512,7 +512,10 @@ function PersonDetailsPage({ params }: Props) {
     }
 
      // ✅ This will work for your current store
-setFormData({ [key]: data.pid });
+setFormData({ 
+  father_id: singlePerson.pid,
+  [key]: data.pid 
+});
 
     // Reset search and close modal
     //filteredProfiles.;
@@ -667,16 +670,22 @@ const handleReltionshipSubmit = async (e) => {
   };
 
   useEffect(() => {
+    // Fetch the profile data first
     fetchCustomers({ page: pagination.page });
-    fetchEducations();
-    fetchdeaths();
-    fetchRelationship();
-    openMngeModal(singlePerson);
     getSinglePerson(id);
-
+    
+    // Fetch education and death records for this specific user
+    if (id) {
+      console.log(`Fetching data for user ID: ${id}`);
+      fetchEducations(id);
+      fetchdeaths(id);
+      fetchRelationship();
+      fetchRecords(id);
+      openMngeModal(singlePerson);
+    }
 
     console.log("relationship data:", relationship);
-  }, []);
+  }, [id]);
 
   // Monitor changes to marriageRecords
   useEffect(() => {
@@ -703,9 +712,18 @@ const handleReltionshipSubmit = async (e) => {
   // Fetch education records when currentPersonId changes
   useEffect(() => {
     if (currentPersonId) {
-      fetchEducations();
+      fetchEducations(currentPersonId);
     }
   }, [currentPersonId]);
+  
+  // Fetch education and death records when singlePerson changes
+  useEffect(() => {
+    if (singlePerson && singlePerson.pid) {
+      console.log(`Fetching education and death records for user with pid: ${singlePerson.pid}`);
+      fetchEducations(singlePerson.pid);
+      fetchdeaths(singlePerson.pid);
+    }
+  }, [singlePerson]);
 
   const openSerchModal = (key) => {
     setCurrentProfileKey(key);
@@ -717,14 +735,26 @@ const handleReltionshipSubmit = async (e) => {
     setIsSearchProfileModalOpen(true);
   };
 
-  const openModal = () => {
-    setIsModalOpen(true);
-  };
+ const openModal = () => {
+  if (!singlePerson || !singlePerson.gender || !singlePerson.pid) {
+    console.warn("Missing person data");
+    return;
+  }
+
+  if (singlePerson.gender === "Male") {
+    setFormData({ father_id: singlePerson.pid });
+  } else {
+    setFormData({ mother_id: singlePerson.pid });
+  }
+
+  setIsModalOpen(true);
+};
+
 
   const openMngeModal = async (person) => {
     console.log("Selected profile:", id);
     try {
-      toast.info("Fetching marriage data...");
+      // toast.info("Fetching marriage data...");
 
       const fetchMarriageData = async (userId) => {
         try {
@@ -762,10 +792,10 @@ const handleReltionshipSubmit = async (e) => {
       setProfile(person);
 
 
-      toast.success("Marriage data loaded successfully");
+      // toast.success("Marriage data loaded successfully");
     } catch (error) {
       console.error("Error fetching marriage data:", error);
-      toast.error("Failed to fetch marriage data");
+      // toast.error("Failed to fetch marriage data");
 
       setProfile(person);
 
@@ -968,7 +998,7 @@ const handleReltionshipSubmit = async (e) => {
       if (editMode) {
         // For profile update in the basic info tab
         if (!formData._id || !/^[0-9a-fA-F]{24}$/.test(formData._id)) {
-          toast.error("Invalid person ID format");
+           toast.error("Invalid person ID format");
           return;
         }
         
@@ -1165,6 +1195,12 @@ const handleReltionshipSubmit = async (e) => {
   return person ? `${person.first_name} ${person.last_name}` : '';
 };
 
+
+// 🔁 Map version (faster if you have many rows)
+const personNameMap = new Map();
+persons.forEach(p => {
+  personNameMap.set(p.pid, `${p.first_name} ${p.last_name}`);
+});
 
   return (
     <div className="nk-content-body">
@@ -1389,16 +1425,12 @@ const handleReltionshipSubmit = async (e) => {
                       openModal={openMngeModal}
                       handlePageChange={handlePageChange}
                       pagination={pagination}
-                      status="Pending"
-                      currentPersons={currentPersons}
-                      persons={persons}
+                      data={data}
                       loading={loading}
                       searchQuery={searchQuery}
                       offset={offset}
                       personsPerPage={personsPerPage}
-                      filteredPersons={filteredPersons}
                       handleSearchChange={handleSearchChange}
-                      handlePageClick={handlePageClick}
                       openDeleteModal={openDeleteModal}
                       handleEdit={handleEdit}
                     />
@@ -1534,23 +1566,27 @@ const handleReltionshipSubmit = async (e) => {
                       ) : 
                      
 
-                      <EducationDataTable
-                        openModal={openMngeModal}
-                        handlePageChange={handlePageChange}
-                        pagination={pagination}
-                        persons={persons}
-                        currentPersons={currentPersons}
-                        educations={educations}
-                        loading={loading}
-                        searchQuery={searchQuery}
-                        offset={offset}
-                        personsPerPage={personsPerPage}
-                        filteredPersons={filteredPersons}
-                        handleSearchChange={handleSearchChange}
-                        handlePageClick={handlePageClick}
-                        openDeleteModal={openEducationDeleteModal}
-                        handleEdit={modifyButton}
-                      />
+                        <DynamicTable
+                        title="Education Records"
+                        columns={[
+                          { key: 'class_name', label: 'Class Name', badgeClass: 'badge-primary' },
+                          { key: 'year', label: 'Year', badgeClass: 'badge-primary' },
+                          { key: 'institute', label: 'Institute', badgeClass: 'badge-primary' },
+                          { key: 'created_on', label: 'Created On', badgeClass: 'badge-warning' },
+                          { key: 'updated_on', label: 'Updated On', badgeClass: 'badge-warning' }
+                        ]}
+                        data={educations}
+                        loading={educationLoading}
+                        showActions={true}
+                        person={persons}
+                        onDelete={openEducationDeleteModal}
+                        onEdit={modifyButton}
+                        emptyMessage="No education records found"
+                        customStyles={{
+                          tbody: { fontFamily: "Segoe UI" },
+                          thead: { fontSize: "14px", fontWeight: 'bold' }
+                       }}
+                       />
                        }
                     </div>
                   </div>
@@ -1686,23 +1722,44 @@ const handleReltionshipSubmit = async (e) => {
                         </div>
                       </form>
                       ):
-                      <DeathDataTable
-                        openModal={openMngeModal}
-                        handlePageChange={handlePageChange}
-                        pagination={pagination}
-                        currentPersons={currentPersons}
-                        deaths={deaths}
-                        persons={persons}
-                        loading={loading}
-                        searchQuery={searchQuery}
-                        offset={offset}
-                        personsPerPage={personsPerPage}
-                        filteredPersons={filteredPersons}
-                        handleSearchChange={handleSearchChange}
-                        handlePageClick={handlePageClick}
-                        openDeleteModal={openDeathDeleteModal}
-                        handleEdit={modifyDethButton}
-                      />
+                       <DynamicTable
+                        title="Death History"
+                        columns={[
+                          { key: 'death_place', label: 'Death Place', badgeClass: 'badge-primary' },
+                          { key: 'death_reason', label: 'Death Reason', badgeClass: 'badge-primary' },
+                          { key: 'death_date', label: 'Death Date', type: 'date', badgeClass: 'badge-warning' },
+                          { key: 'created_on', label: 'Created On', type: 'date', badgeClass: 'badge-warning' },
+                          { key: 'updated_on', label: 'Updated On', type: 'date', badgeClass: 'badge-warning' }
+                        ]}
+                        data={death}
+                        loading={deathLoading}
+                        showActions={true}
+                        person={persons}
+                        onDelete={openDeathDeleteModal}
+                        onEdit={modifyDethButton}
+                        emptyMessage="No history found"
+                        customStyles={{
+                          tbody: { fontFamily: "Segoe UI" },
+                          thead: { fontSize: "14px", fontWeight: 'bold' }
+                       }}
+                       />
+                      // <DeathDataTable
+                      //   openModal={openMngeModal}
+                      //   handlePageChange={handlePageChange}
+                      //   pagination={pagination}
+                      //   currentPersons={currentPersons}
+                      //   death={death}
+                      //   persons={persons}
+                      //   loading={loading}
+                      //   searchQuery={searchQuery}
+                      //   offset={offset}
+                      //   personsPerPage={personsPerPage}
+                      //   filteredPersons={filteredPersons}
+                      //   handleSearchChange={handleSearchChange}
+                      //   handlePageClick={handlePageClick}
+                      //   openDeleteModal={openDeathDeleteModal}
+                      //   handleEdit={modifyDethButton}
+                      // />
             }
                     </div>
                   </div>
@@ -1789,8 +1846,13 @@ const handleReltionshipSubmit = async (e) => {
                                                       : selectedPersonId1.slice(0, 12)}
                                       
                                     </div>
+                                    <button className="btn btn-primary ml-2" type="button" onClick={() => openSerchModal('person1_id')}>
+                                      Choose
+                                    </button>
                                   </div>
-                                 
+                                  {RelationshipFormErrors.person1_id && (
+                                    <div className="invalid-feedback">{RelationshipFormErrors.person1_id}</div>
+                                  )}
                                 </div>
                               </div>
                             </div>
@@ -1847,80 +1909,99 @@ const handleReltionshipSubmit = async (e) => {
                           <div className="row mt-2" style={{ borderTop: "1px solid #ede8e8" }}></div>
                         </div>
                       </form>
-                      ):   <div className="col-md-12">
+                      ):   
 
-                        <div className="card-inner p-0 table-responsive">
-                          <table className="table table-hover nowrap align-middle dataTable-init">
-                            <thead style={{ fontSize: "14px", fontWeight: 'bold' }} className="tb-tnx-head">
-                              <tr>
-                                <th scope="col">#</th>
-                                <th>RID</th>
-                                <th>Person1</th>
-                                <th>Person2</th>
-                                <th>Relationship Type</th>
-                                <th>CreatedBy</th>
-                                <th>Action</th>
-                              </tr>
-                            </thead>
-                            <tbody style={{ fontFamily: "Segoe UI" }} className="tb-tnx-body">
-                              {loading ? (
-                                <tr>
-                                  <td className="text-center">
-                                    <span className="spinner-border text-secondary" role="status">
-                                      <span className="visually-hidden">Loading...</span>
-                                    </span>
-                                  </td>
-                                </tr>
-                              ) : (marriageList.length > 0 ? marriageList : marriageRecords).length === 0 ? (
-                                <tr>
-                                  <td className="text-center">No Records found</td>
-                                </tr>
-                              ) : (
-                                (marriageList.length > 0 ? marriageList : marriageRecords)
-                                  .filter((person): person is any => person != null) // Remove null/undefined records with type guard
-                                  .map((person: any, index) => {
-                                    if (!person) return null;
-                                    // Find matching profiles
-                                    const person1Profile = persons && Array.isArray(persons) ?
-                                      persons.find(p => p && p.pid === person.person1_id) : null;
-                                    const person2Profile = persons && Array.isArray(persons) ?
-                                      persons.find(p => p && p.pid === person.person2_id) : null;
-                                    console.log("person1", person1Profile);
-                                    console.log("person2", person2Profile);
-                                    return (
-                                      <tr key={person.rid}>
-                                        <td><b>{marriageOffset + index + 1}</b></td>
-                                        <td
-                                          // onClick={() => gotoUserDetail(person.rid ?? '')}
-                                          className="hover:underline cursor-pointer"
-                                        >
-                                          {person.rid}
-                                        </td>
-                                        <td>{person1Profile?.first_name + "" + person1Profile?.last_name || "N/A"}</td>
-                                        <td>{person2Profile?.first_name + "" + person2Profile?.last_name || "N/A"}</td>
-                                        <td style={{ textOverflow: "ellipsis", overflow: "hidden" }}>{person.relationship_type}</td>
+                       <DynamicTable
+                        title="Marriage History"
+                        columns={[
+                          { 
+                            key: 'person1_id', 
+                            label: 'Partner Name', 
+                            badgeClass: 'badge-primary',
+                            format: (value, record) => {
+                              const person1Profile = personNameMap.get(value);
+                              return person1Profile ? `${person1Profile.first_name} ${person1Profile.last_name}` : 'N/A';
+                            }
+                          },
+                          { key: 'relationship_type', label: 'Relationship Type', badgeClass: 'badge-primary' },
+                          { key: 'date', label: 'Date', type: 'date', badgeClass: 'badge-warning' }
+                        ]}
+                        data={marriageList.length > 0 ? marriageList : marriageRecords}
+                        loading={RelationshipLoading}
+                        showActions={true}
+                        person={persons}
+                        onDelete={openDeathDeleteModal}
+                        onEdit={handleRelationshipEdit}
+                        emptyMessage="No marriage history found"
+                        customStyles={{
+                          tbody: { fontFamily: "Segoe UI" },
+                          thead: { fontSize: "14px", fontWeight: 'bold' }
+                       }}
+                       />
+                      
+                      
+                      
+                    //   <div className="col-md-12">
+
+                    //     <div className="card-inner p-0 table-responsive">
+                    //       <table className="table table-hover nowrap align-middle dataTable-init">
+                    //         <thead style={{ fontSize: "14px", fontWeight: 'bold' }} className="tb-tnx-head">
+                    //           <tr>
+                    //             <th scope="col">#</th>
+                    //             <th>Partner Name</th>
+                    //             <th>Relationship Type</th>
+                    //             <th>CreatedBy</th>
+                    //             <th>Action</th>
+                    //           </tr>
+                    //         </thead>
+                    //         <tbody style={{ fontFamily: "Segoe UI" }} className="tb-tnx-body">
+                    //           {loading ? (
+                    //             <tr>
+                    //               <td className="text-center">
+                    //                 <span className="spinner-border text-secondary" role="status">
+                    //                   <span className="visually-hidden">Loading...</span>
+                    //                 </span>
+                    //               </td>
+                    //             </tr>
+                    //           ) : (marriageList.length > 0 ? marriageList : marriageRecords).length === 0 ? (
+                    //             <tr>
+                    //               <td className="text-center">No Records found</td>
+                    //             </tr>
+                    //           ) : (
+                    //             (marriageList.length > 0 ? marriageList : marriageRecords)
+                    //               .map((person: any, index) => {
+                    //                 if (!person) return null;
+                    //                 // Find matching profiles
+                    //                 const person1Profile = personNameMap.get(person.person1_id);
+                                    
+                    //                 console.log("person1", person1Profile);
+                    //                 return (
+                    //                   <tr key={person.rid}>
+                    //                     <td><b>{marriageOffset + index + 1}</b></td>
+                    //                     <td>{person1Profile?.first_name + "" + person1Profile?.last_name || "N/A"}</td>
+                    //                     <td>{person.relationship_type}</td>
                                        
-                                        <td><span className="badge badge-info">{person.date}</span></td>
-                                        <td className="text-center">
-                                          <button className="btn btn-info ml-2" type="button" onClick={()=>handleRelationshipEdit(person)}>
-                                            <span className="icon ni ni-pen"></span>
-                                          </button>
-                                        </td>
-                                      </tr>
-                                    );
-                                  })
-                              )}
-                            </tbody>
-                          </table>
+                    //                     <td><span className="badge badge-info">{person.date}</span></td>
+                    //                     <td className="text-center">
+                    //                       <button className="btn btn-info ml-2" type="button" onClick={()=>handleRelationshipEdit(person)}>
+                    //                         <span className="icon ni ni-pen"></span>
+                    //                       </button>
+                    //                     </td>
+                    //                   </tr>
+                    //                 );
+                    //               })
+                    //           )}
+                    //         </tbody>
+                    //       </table>
 
 
-                          {/* <Pagination
-                      page={pagination.page}
-                      totalPages={pagination.pages}
-                      onPageChange={handlePageChange}
-                    /> */}
-                        </div>
-                      </div>
+                    //       {/* <Pagination
+                    //   page={pagination.page}
+                    //   totalPages={pagination.pages}
+                    //   onPageChange={handlePageChange}
+                    // /> */}
+                    //     </div>
+                    //   </div>
                     }
 
                    
@@ -2320,40 +2401,45 @@ const handleReltionshipSubmit = async (e) => {
           </div>
         </div>
       )}
+
+
+
+      
       {isDeleteModalOpen && (
-        <DeleteModal
-          personToDelete={personToDelete}
-          loading={loading}
-          setCloseDeleteModal={setCloseDeleteModal}
-          handleDelete={handleDelete}
-        />
+         <DeleteModal
+            personToDelete={personToDelete}
+            loading={loading}
+            setCloseDeleteModal={setCloseDeleteModal}
+            handleDelete={handleDelete}
+          />
       )}
 
       {isEducationDeleteModalOpen && (
-        <EducationDeleteModal
-          personToDelete={personToDelete}
+         <DeleteModal
+             personToDelete={personToDelete}
           loading={educationLoading}
           setCloseDeleteModal={setEducationCloseDeleteModal}
           handleDelete={handleDeleteEducationDetail}
-        />
+          />
       )}
       
       {isDeathDeleteModalOpen && (
-        <DeathDeleteModal
-          personToDelete={personToDelete}
+        <DeleteModal
+               personToDelete={personToDelete}
           loading={deathLoading}
           setCloseDeleteModal={setDeathCloseDeleteModal}
           handleDelete={handleDeleteDeathDetail}
-        />
+          />
+    
       )}
 
       {isDeleteMrrigeModalOpen && (
-        <MarriageDeleteModal
-          personToDelete={mrriageToDelete}
+        <DeleteModal
+                personToDelete={mrriageToDelete}
           loading={loading}
           setCloseDeleteModal={setClosesDeleteModal}
           handleDelete={handlesDelete}
-        />
+          />
       )}
 
       {isSearchProfileModalOpen && (
@@ -2390,5 +2476,3 @@ const handleReltionshipSubmit = async (e) => {
 
   );
 }
-
-export default PersonDetailsPage;
