@@ -3,7 +3,7 @@ import useProfileStore from '../stores/seacrh_profile';
 
 function SearchProfileModal({
     currentPersons,
-    offset = 0,
+    offset,
     close,
     handleSelectPerson,
     clearList,

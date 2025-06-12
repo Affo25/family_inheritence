@@ -16,16 +16,9 @@ import ProfileDataTable from "../../../componenet/profile_table";
 import DynamicTable from "../../../componenet/DataTables/dynamicTable";
 
 
-interface PageProps {
-  params: {
-    userId: string;
-  };
-  searchParams?: {
-    [key: string]: string | string[] | undefined;
-  };
-}
 
-export default function PersonDetailsPage({ params }: PageProps) {
+
+export default function PersonDetailsPage({ params }) {
 
   const id = params.userId;
   const {
@@ -2444,12 +2437,12 @@ persons.forEach(p => {
 
       {isSearchProfileModalOpen && (
         <SearchProfileModal
-          currentPersons={filteredProfiles}
-          loading={loadings}
-          isEditMode={isEditMode}
-          searchQuery={handleInputChanges}
-          handleSearchChange={handleSearchChanges}
-          handlePageClick={handlePageClick}
+           currentPersons={filteredProfiles}
+          // loading={loadings}
+          // isEditMode={isEditMode}
+          // searchQuery={handleInputChanges}
+          // handleSearchChange={handleSearchChanges}
+          // handlePageClick={handlePageClick}
           offset={offset}
           close={closesSearchModal}
           handleSelectPerson={(person) => handlesSelectPerson(ProfileKey, person)}
@@ -2459,12 +2452,12 @@ persons.forEach(p => {
 
       {isSearchModalOpen && (
         <SearchProfileModal
-          currentPersons={filteredProfiles}
-          loading={loadings}
-          isEditMode={isEditMode}
-          searchQuery={handleInputChanges}
-          handleSearchChange={handleSearchChanges}
-          handlePageClick={handlePageClick}
+           currentPersons={filteredProfiles}
+          // loading={loadings}
+          // isEditMode={isEditMode}
+          // searchQuery={handleInputChanges}
+          // handleSearchChange={handleSearchChanges}
+          // handlePageClick={handlePageClick}
           offset={offset}
           close={closeSearchModal}
           handleSelectPerson={(person) => handleSelectPerson(currentProfileKey, person)}
